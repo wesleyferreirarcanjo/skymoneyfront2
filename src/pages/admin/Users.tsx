@@ -23,72 +23,11 @@ export default function Users() {
     filterUsers();
   }, [searchTerm, allUsers, currentPage, showUnverifiedOnly]);
 
-  // Mock data generator for testing
-  const generateMockUsers = (count: number): UserType[] => {
-    const firstNames = [
-      'João', 'Maria', 'José', 'Ana', 'Carlos', 'Mariana', 'Pedro', 'Julia', 'Lucas', 'Fernanda',
-      'Rafael', 'Camila', 'Diego', 'Larissa', 'Felipe', 'Beatriz', 'Gabriel', 'Isabella', 'Thiago', 'Amanda',
-      'Bruno', 'Carolina', 'André', 'Natália', 'Rodrigo', 'Patricia', 'Marcelo', 'Renata', 'Leandro', 'Cristina',
-      'Wesley', 'Vanessa', 'Alexandre', 'Monica', 'Ricardo', 'Sandra', 'Eduardo', 'Tatiana', 'Paulo', 'Daniela'
-    ];
-    
-    const lastNames = [
-      'Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes',
-      'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes', 'Vieira', 'Barbosa',
-      'Rocha', 'Dias', 'Monteiro', 'Cardoso', 'Reis', 'Araújo', 'Mendes', 'Nunes', 'Moreira', 'Freitas'
-    ];
-    
-    const roles = ['user', 'admin'];
-    const statuses = ['active', 'pending', 'suspended', 'blocked'];
-    
-    return Array.from({ length: count }, (_, index) => {
-      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-      const role = index < 5 ? 'admin' : roles[Math.floor(Math.random() * roles.length)]; // First 5 are admins
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      
-      return {
-        id: `user-${index + 1}-${Math.random().toString(36).substr(2, 9)}`,
-        firstName,
-        lastName,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@example.com`,
-        phone: `+5511${Math.floor(Math.random() * 900000000) + 100000000}`,
-        cpf: `${Math.floor(Math.random() * 90000000000) + 10000000000}`,
-        birthDate: new Date(1980 + Math.floor(Math.random() * 30), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-        address: `Rua ${Math.floor(Math.random() * 999) + 1}`,
-        addressNumber: `${Math.floor(Math.random() * 9999) + 1}`,
-        cep: `${Math.floor(Math.random() * 90000000) + 10000000}`,
-        bank: 'Banco do Brasil',
-        agency: `${Math.floor(Math.random() * 9000) + 1000}`,
-        account: `${Math.floor(Math.random() * 900000) + 100000}-${Math.floor(Math.random() * 9) + 1}`,
-        pixKey: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@example.com`,
-        pixKeyType: 'email',
-        pixOwnerName: `${firstName} ${lastName}`,
-        pixCopyPaste: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@example.com`,
-        pixQrCode: `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`,
-        btcAddress: `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa${index}`,
-        btcQrCode: `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`,
-        usdtAddress: `TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE${index}`,
-        usdtQrCode: `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`,
-        avatar: index % 3 === 0 ? `https://i.pravatar.cc/150?img=${index + 1}` : undefined,
-        role: role as 'user' | 'admin' | 'USER' | 'ADMIN',
-        emailVerified: Math.random() > 0.2, // 80% verified
-        phoneVerified: Math.random() > 0.3, // 70% verified
-        adminApproved: role === 'admin' || Math.random() > 0.4, // Admins always approved, 60% of users approved
-        status: status as 'pending' | 'active' | 'suspended' | 'blocked',
-        createdAt: new Date(2020 + Math.floor(Math.random() * 4), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-    });
-  };
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Generate 1000 mock users only once
-      const mockUsers = generateMockUsers(1000);
-      setAllUsers(mockUsers);
+      const allUsers = await authAPI.getUsers();
+      setAllUsers(allUsers || []);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
