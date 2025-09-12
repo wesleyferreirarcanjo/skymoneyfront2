@@ -1,11 +1,11 @@
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/user';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sky-money-ai-skymoneyback2.dq4298.easypanel.host';
 
 // Debug: mostrar qual URL está sendo usada (apenas desenvolvimento)
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
   console.log('🔗 API Base URL:', API_BASE_URL);
-  console.log('🔗 Usando REACT_APP_API_URL?', !!process.env.REACT_APP_API_URL);
+  console.log('🔗 Usando VITE_API_URL?', !!import.meta.env.VITE_API_URL);
 }
 
 // Helper function to get auth token
