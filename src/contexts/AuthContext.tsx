@@ -134,44 +134,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = localStorage.getItem('user');
 
         if (token && userData) {
+          const user = JSON.parse(userData);
+          dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+
+          // Refresh profile to get latest data
           try {
-            const user = JSON.parse(userData);
-            // Primeiro, restaurar o estado com os dados do localStorage
-            dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
-            
-            // Depois, tentar validar o token em background (não bloqueia o carregamento)
-            authAPI.getProfile()
-              .then((response: any) => {
-                if (response.success) {
-                  // Token válido, atualizar dados do usuário
-                  dispatch({ type: 'UPDATE_USER', payload: response.data });
-                  localStorage.setItem('user', JSON.stringify(response.data));
-                } else {
-                  // Token inválido, fazer logout
-                  console.warn('Token inválido, fazendo logout');
-                  localStorage.removeItem('authToken');
-                  localStorage.removeItem('user');
-                  dispatch({ type: 'AUTH_LOGOUT' });
-                }
-              })
-              .catch((error: any) => {
-                console.warn('Erro ao validar token, mantendo sessão local:', error);
-                // Em caso de erro de rede, manter a sessão local
-                // Não limpar os dados do localStorage
-              });
+            const response = await authAPI.getProfile();
+            if (response.success) {
+              dispatch({ type: 'UPDATE_USER', payload: response.data });
+              localStorage.setItem('user', JSON.stringify(response.data));
+            }
           } catch (error) {
-            console.error('Erro ao parsear dados do usuário:', error);
-            // Dados corrompidos, limpar
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            dispatch({ type: 'SET_LOADING', payload: false });
+            console.error('Failed to refresh profile:', error);
           }
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
-        // Em caso de erro crítico, apenas parar loading sem limpar dados
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
