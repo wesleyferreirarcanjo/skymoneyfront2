@@ -370,18 +370,6 @@ export default function Queue() {
 
           {/* Progress Bar Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                 <div>
-                   <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
-                   <span className="ml-2 text-lg font-bold text-gray-900">{getOccupiedSlotsCount()}/{getTotalSlotsCount()}</span>
-                 </div>
-                 <div className="text-sm text-gray-600">
-                   {getTotalSlotsCount() > 0 ? ((getOccupiedSlotsCount() / getTotalSlotsCount()) * 100).toFixed(1) : 0}% ocupado
-                 </div>
-              </div>
-            </div>
-
             {/* Progress Bar */}
             <div className="w-full">
                <div className="flex justify-between text-xs text-gray-600 mb-1">
