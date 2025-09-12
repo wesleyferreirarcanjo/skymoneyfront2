@@ -21,18 +21,18 @@ RUN npm run build
 # Stage 2: Production stage
 FROM nginx:alpine
 
-# Argumentos de build para configurar a API externa
-ARG API_BACKEND_URL=https://SUA_URL_EXTERNA_AQUI
-ENV API_BACKEND_URL=$API_BACKEND_URL
-
 # Copiar arquivos de build para o nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copiar configuração customizada do nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Argumentos de build para configurar a API externa
+ARG API_BACKEND_URL
+ENV API_BACKEND_URL=${API_BACKEND_URL:-https://api.skymoney.com}
+
 # Substituir a URL da API no nginx.conf
-RUN sed -i "s|\$API_BACKEND_URL|$API_BACKEND_URL|g" /etc/nginx/nginx.conf
+RUN sed -i "s|SUA_URL_EXTERNA_AQUI|$API_BACKEND_URL|g" /etc/nginx/nginx.conf
 
 # Expor porta 80
 EXPOSE 80
