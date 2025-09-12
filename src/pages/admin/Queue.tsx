@@ -575,10 +575,10 @@ export default function Queue() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {queueEntries.map((entry) => (
-                    <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  {queueEntries.map((item) => (
+                    <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between">
-                        {/* Entry Info */}
+                        {/* User Info */}
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="flex-shrink-0">
                             <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
@@ -589,47 +589,65 @@ export default function Queue() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-2">
                               <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {entry.user.firstName} {entry.user.lastName}
+                                {item.user.firstName} {item.user.lastName}
                               </h4>
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                entry.is_receiver 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {entry.is_receiver ? (
-                                  <>
-                                    <Crown className="h-3 w-3 mr-1" />
-                                    RECEPTOR
-                                  </>
-                                ) : (
-                                  <>
-                                    <Clock className="h-3 w-3 mr-1" />
-                                    AGUARDANDO
-                                  </>
-                                )}
-                              </span>
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                Posição {entry.position}
-                              </span>
+                              {item.type === 'queue' ? (
+                                <>
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    item.entry.is_receiver 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {item.entry.is_receiver ? (
+                                      <>
+                                        <Crown className="h-3 w-3 mr-1" />
+                                        RECEPTOR
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        AGUARDANDO
+                                      </>
+                                    )}
+                                  </span>
+                                  <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    Posição {item.entry.position}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  EM ESPERA
+                                </span>
+                              )}
                             </div>
                             
                             <div className="space-y-1 text-sm text-gray-600">
                               <div className="flex items-center">
                                 <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span className="truncate">{entry.user.email}</span>
+                                <span className="truncate">{item.user.email}</span>
                               </div>
-                              <div className="flex items-center">
-                                <Target className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span>Doação #{entry.donation_number}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span>Adicionado em {formatDate(entry.created_at)}</span>
-                              </div>
-                              {entry.passed_user_ids.length > 0 && (
+                              {item.type === 'queue' ? (
+                                <>
+                                  <div className="flex items-center">
+                                    <Target className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                    <span>Doação #{item.entry.donation_number}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                    <span>Adicionado em {formatDate(item.entry.created_at)}</span>
+                                  </div>
+                                  {item.entry.passed_user_ids.length > 0 && (
+                                    <div className="flex items-center">
+                                      <AlertCircle className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                      <span>{item.entry.passed_user_ids.length} usuário(s) passaram</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
                                 <div className="flex items-center">
-                                  <AlertCircle className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                  <span>{entry.passed_user_ids.length} usuário(s) passaram</span>
+                                  <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                  <span>Aguardando para entrar na fila</span>
                                 </div>
                               )}
                             </div>
@@ -640,51 +658,73 @@ export default function Queue() {
                         <div className="flex flex-col items-end space-y-3">
                           {/* Status */}
                           <div className="flex items-center text-sm">
-                            {entry.is_receiver ? (
-                              <span className="text-green-600 flex items-center">
-                                <Crown className="w-3 h-3 mr-1" />
-                                <span className="text-xs">Receptor Ativo</span>
-                              </span>
+                            {item.type === 'queue' ? (
+                              item.entry.is_receiver ? (
+                                <span className="text-green-600 flex items-center">
+                                  <Crown className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">Receptor Ativo</span>
+                                </span>
+                              ) : (
+                                <span className="text-yellow-600 flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">Na Fila</span>
+                                </span>
+                              )
                             ) : (
-                              <span className="text-yellow-600 flex items-center">
+                              <span className="text-gray-600 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
-                                <span className="text-xs">Aguardando</span>
+                                <span className="text-xs">Em Espera</span>
                               </span>
                             )}
                           </div>
 
                           {/* Action Buttons */}
                           <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleViewEntry(entry.id)}
-                              className="flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                              title="Ver detalhes da entrada"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              Ver
-                            </button>
-                            {!entry.is_receiver && (
-                              <button
-                                onClick={() => handleSetReceiver(entry.id)}
-                                disabled={actionLoading === entry.id}
-                                className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50"
-                              >
-                                {actionLoading === entry.id ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-green-600 mr-1"></div>
-                                ) : (
-                                  <Crown className="w-3 h-3 mr-1" />
+                            {item.type === 'queue' ? (
+                              <>
+                                <button
+                                  onClick={() => handleViewEntry(item.id)}
+                                  className="flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
+                                  title="Ver detalhes da entrada"
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Ver
+                                </button>
+                                {!item.entry.is_receiver && (
+                                  <button
+                                    onClick={() => handleSetReceiver(item.id)}
+                                    disabled={actionLoading === item.id}
+                                    className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50"
+                                  >
+                                    {actionLoading === item.id ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-green-600 mr-1"></div>
+                                    ) : (
+                                      <Crown className="w-3 h-3 mr-1" />
+                                    )}
+                                    Definir Receptor
+                                  </button>
                                 )}
-                                Definir Receptor
+                                <button
+                                  onClick={() => handleDeleteEntry(item.id)}
+                                  disabled={actionLoading === item.id}
+                                  className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Remover
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedUserId(item.user.id);
+                                  setIsAddModalOpen(true);
+                                }}
+                                className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-blue-100 text-blue-800 hover:bg-blue-200"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Adicionar à Fila
                               </button>
                             )}
-                            <button
-                              onClick={() => handleDeleteEntry(entry.id)}
-                              disabled={actionLoading === entry.id}
-                              className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50"
-                            >
-                              <Trash2 className="w-3 h-3 mr-1" />
-                              Remover
-                            </button>
                           </div>
                         </div>
                       </div>
