@@ -70,13 +70,13 @@ export default function Queue() {
   const filterQueueEntries = () => {
     // Create combined list of all users (in queue and waiting)
     const usersInQueue = allQueueEntries
-      .filter(entry => entry.user_id !== null)
+      .filter(entry => entry.user_id !== null && entry.user_id !== '')
       .map(entry => entry.user_id);
     const waitingUsers = allApprovedUsers.filter(user => !usersInQueue.includes(user.id));
     
-    // Create display items for occupied queue entries (with user_id)
+    // Create display items for occupied queue entries (with valid user_id)
     const queueItems = allQueueEntries
-      .filter(entry => entry.user_id !== null && entry.user)
+      .filter(entry => entry.user_id !== null && entry.user_id !== '' && entry.user)
       .map(entry => ({
         type: 'queue' as const,
         id: entry.id,
@@ -85,9 +85,9 @@ export default function Queue() {
         status: entry.is_receiver ? 'receiver' : 'active'
       }));
     
-    // Create display items for empty queue slots (with null user_id)
+    // Create display items for empty queue slots (with null or empty user_id)
     const emptySlots = allQueueEntries
-      .filter(entry => entry.user_id === null)
+      .filter(entry => entry.user_id === null || entry.user_id === '')
       .map(entry => ({
         type: 'empty-slot' as const,
         id: entry.id,
