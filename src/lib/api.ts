@@ -126,24 +126,13 @@ export const authAPI = {
     }
   },
 
-  getProfile: async (): Promise<AuthResponse> => {
+  getProfile: async (): Promise<any> => {
     try {
       const result = await makeAuthenticatedRequest('/users/profile');
-      return {
-        success: true,
-        data: result
-      };
+      return result;
     } catch (error: any) {
       console.error('Get profile error:', error);
-
-      // Check if it's an authentication error
-      const isAuthError = error.message?.includes('401') || error.message?.includes('Unauthorized');
-
-      return {
-        success: false,
-        message: error.message || 'Failed to get profile',
-        isAuthError: isAuthError
-      };
+      throw error;
     }
   },
 

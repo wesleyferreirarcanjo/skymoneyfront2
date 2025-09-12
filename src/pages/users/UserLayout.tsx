@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Profile from './Profile';
 
 type UserView = 'home' | 'profile';
 
@@ -55,29 +56,7 @@ export default function UserLayout() {
           </div>
         );
       case 'profile':
-        return (
-          <div className="ml-64 p-8">
-            <div className="max-w-6xl mx-auto">
-              {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Perfil</h1>
-                <p className="text-gray-600">Gerencie suas informações pessoais</p>
-              </div>
-
-              {/* Profile Content - Blank for now */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-center py-12">
-                  <h2 className="text-xl font-semibold text-gray-600 mb-4">
-                    Perfil em desenvolvimento
-                  </h2>
-                  <p className="text-gray-500">
-                    Em breve, você poderá gerenciar suas informações pessoais aqui.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <Profile />;
       default:
         return (
           <div className="ml-64 p-8">
