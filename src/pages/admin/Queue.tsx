@@ -71,17 +71,32 @@ export default function Queue() {
 
   const filterQueueEntries = () => {
     // Create combined list of all users (in queue and waiting)
-    const usersInQueue = allQueueEntries.map(entry => entry.user_id);
+    const usersInQueue = allQueueEntries
+      .filter(entry => entry.user_id !== null)
+      .map(entry => entry.user_id);
     const waitingUsers = allApprovedUsers.filter(user => !usersInQueue.includes(user.id));
     
-    // Create display items for queue entries
-    const queueItems = allQueueEntries.map(entry => ({
-      type: 'queue' as const,
-      id: entry.id,
-      user: entry.user,
-      entry: entry,
-      status: entry.is_receiver ? 'receiver' : 'waiting-in-queue'
-    }));
+    // Create display items for occupied queue entries (with user_id)
+    const queueItems = allQueueEntries
+      .filter(entry => entry.user_id !== null && entry.user)
+      .map(entry => ({
+        type: 'queue' as const,
+        id: entry.id,
+        user: entry.user!,
+        entry: entry,
+        status: entry.is_receiver ? 'receiver' : 'active'
+      }));
+    
+    // Create display items for empty queue slots (with null user_id)
+    const emptySlots = allQueueEntries
+      .filter(entry => entry.user_id === null)
+      .map(entry => ({
+        type: 'empty-slot' as const,
+        id: entry.id,
+        user: null,
+        entry: entry,
+        status: 'empty'
+      }));
     
     // Create display items for waiting users
     const waitingItems = waitingUsers.map(user => ({
@@ -93,11 +108,11 @@ export default function Queue() {
     }));
     
     // Combine all items
-    let allItems = [...queueItems, ...waitingItems];
+    let allItems = [...queueItems, ...emptySlots, ...waitingItems];
     
     // Apply user filter
     if (userFilter === 'in-queue') {
-      allItems = queueItems;
+      allItems = [...queueItems, ...emptySlots];
     } else if (userFilter === 'waiting') {
       allItems = waitingItems;
     }
@@ -105,12 +120,18 @@ export default function Queue() {
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      allItems = allItems.filter(item => 
-        item.user.firstName.toLowerCase().includes(searchLower) ||
-        item.user.lastName.toLowerCase().includes(searchLower) ||
-        item.user.email.toLowerCase().includes(searchLower) ||
-        (item.entry && item.entry.donation_number.toString().includes(searchTerm))
-      );
+      allItems = allItems.filter(item => {
+        if (item.type === 'empty-slot') {
+          return `posição ${item.entry.position}`.includes(searchTerm);
+        }
+        return (
+          item.user &&
+          (item.user.firstName.toLowerCase().includes(searchLower) ||
+           item.user.lastName.toLowerCase().includes(searchLower) ||
+           item.user.email.toLowerCase().includes(searchLower) ||
+           (item.entry && item.entry.donation_number.toString().includes(searchTerm)))
+        );
+      });
     }
 
     // Apply pagination to filtered results
@@ -222,9 +243,21 @@ export default function Queue() {
 
   // Calculate users waiting to join the queue
   const getWaitingUsersCount = () => {
-    const usersInQueue = allQueueEntries.map(entry => entry.user_id);
+    const usersInQueue = allQueueEntries
+      .filter(entry => entry.user_id !== null)
+      .map(entry => entry.user_id);
     const waitingUsers = allApprovedUsers.filter(user => !usersInQueue.includes(user.id));
     return waitingUsers.length;
+  };
+
+  // Calculate occupied slots (entries with user_id)
+  const getOccupiedSlotsCount = () => {
+    return allQueueEntries.filter(entry => entry.user_id !== null).length;
+  };
+
+  // Calculate available slots (entries with null user_id)
+  const getAvailableSlotsCount = () => {
+    return allQueueEntries.filter(entry => entry.user_id === null).length;
   };
 
 
@@ -306,61 +339,61 @@ export default function Queue() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-gray-800 mr-3">Slots de Participantes</h2>
-              {allQueueEntries.length >= 100 && (
-                <div className="flex items-center text-red-600">
-                  <AlertCircle className="h-5 w-5 mr-1" />
-                  <span className="text-sm font-medium">Todos os slots estão ocupados</span>
-                </div>
-              )}
+               {getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100 && (
+                 <div className="flex items-center text-red-600">
+                   <AlertCircle className="h-5 w-5 mr-1" />
+                   <span className="text-sm font-medium">Todos os slots estão ocupados</span>
+                 </div>
+               )}
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">{allQueueEntries.length}</div>
-              <div className="text-sm text-gray-600">Participantes</div>
-            </div>
+             <div className="text-right">
+               <div className="text-3xl font-bold text-gray-900">{getOccupiedSlotsCount()}</div>
+               <div className="text-sm text-gray-600">Participantes</div>
+             </div>
           </div>
 
           {/* Progress Bar Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div>
-                  <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
-                  <span className="ml-2 text-lg font-bold text-gray-900">{allQueueEntries.length}/100</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {((allQueueEntries.length / 100) * 100).toFixed(1)}% ocupado
-                </div>
+                 <div>
+                   <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
+                   <span className="ml-2 text-lg font-bold text-gray-900">{getOccupiedSlotsCount()}/{allQueueEntries.length}</span>
+                 </div>
+                 <div className="text-sm text-gray-600">
+                   {allQueueEntries.length > 0 ? ((getOccupiedSlotsCount() / allQueueEntries.length) * 100).toFixed(1) : 0}% ocupado
+                 </div>
               </div>
             </div>
 
             {/* Progress Bar */}
             <div className="w-full">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>0 ocupados</span>
-                <span>100 ocupados</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className={`h-3 rounded-full transition-all duration-300 ${
-                    allQueueEntries.length >= 100 
-                      ? 'bg-red-500' 
-                      : allQueueEntries.length >= 80 
-                        ? 'bg-yellow-500' 
-                        : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min((allQueueEntries.length / 100) * 100, 100)}%` }}
-                ></div>
-              </div>
+               <div className="flex justify-between text-xs text-gray-600 mb-1">
+                 <span>0 ocupados</span>
+                 <span>{allQueueEntries.length} slots</span>
+               </div>
+               <div className="w-full bg-gray-200 rounded-full h-3">
+                 <div 
+                   className={`h-3 rounded-full transition-all duration-300 ${
+                     getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100
+                       ? 'bg-red-500' 
+                       : (getOccupiedSlotsCount() / allQueueEntries.length) >= 0.8
+                         ? 'bg-yellow-500' 
+                         : 'bg-green-500'
+                   }`}
+                   style={{ width: `${allQueueEntries.length > 0 ? (getOccupiedSlotsCount() / allQueueEntries.length) * 100 : 0}%` }}
+                 ></div>
+               </div>
             </div>
 
 
             {/* Alert Message */}
-            {allQueueEntries.length >= 100 && (
+            {getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                   <p className="text-sm text-red-700">
-                    <strong>Nenhum slot disponível.</strong> Todos os 100 slots estão ocupados.
+                    <strong>Nenhum slot disponível.</strong> Todos os {allQueueEntries.length} slots estão ocupados.
                   </p>
                 </div>
               </div>
@@ -377,9 +410,9 @@ export default function Queue() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Receptores Ativos</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {allQueueEntries.filter(e => e.is_receiver).length}
-                </p>
+                 <p className="text-2xl font-bold text-gray-900">
+                   {allQueueEntries.filter(e => e.user_id !== null && e.is_receiver).length}
+                 </p>
               </div>
             </div>
           </div>
@@ -405,9 +438,9 @@ export default function Queue() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Doações Ativas</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {new Set(allQueueEntries.map(e => e.donation_number)).size}
-                </p>
+                 <p className="text-2xl font-bold text-gray-900">
+                   {new Set(allQueueEntries.filter(e => e.user_id !== null).map(e => e.donation_number)).size}
+                 </p>
               </div>
             </div>
           </div>
@@ -571,13 +604,17 @@ export default function Queue() {
                             </div>
                           </div>
                           
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {item.user.firstName} {item.user.lastName}
-                              </h4>
-                              {item.type === 'queue' ? (
-                                <>
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center space-x-2 mb-2">
+                               <h4 className="text-sm font-medium text-gray-900 truncate">
+                                 {item.type === 'empty-slot' ? (
+                                   `Slot Vazio - Posição ${item.entry.position}`
+                                 ) : (
+                                   `${item.user.firstName} ${item.user.lastName}`
+                                 )}
+                               </h4>
+                               {item.type === 'queue' ? (
+                                 <>
                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                      item.entry.is_receiver 
                                        ? 'bg-green-100 text-green-800' 
@@ -598,47 +635,61 @@ export default function Queue() {
                                   <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                     Posição {item.entry.position}
                                   </span>
-                                </>
-                              ) : (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  EM ESPERA
-                                </span>
-                              )}
-                            </div>
+                                 </>
+                               ) : item.type === 'empty-slot' ? (
+                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                   <Plus className="h-3 w-3 mr-1" />
+                                   DISPONÍVEL
+                                 </span>
+                               ) : (
+                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                   <Clock className="h-3 w-3 mr-1" />
+                                   EM ESPERA
+                                 </span>
+                               )}
+                             </div>
                             
-                            <div className="space-y-1 text-sm text-gray-600">
-                              <div className="flex items-center">
-                                <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span className="truncate">{item.user.email}</span>
-                              </div>
-                              {item.type === 'queue' ? (
-                                <>
-                                  <div className="flex items-center">
-                                    <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                    <span>Adicionado em {formatDate(item.entry.created_at)}</span>
-                                  </div>
-                                  {item.entry.passed_user_ids.length > 0 && (
-                                    <div className="flex items-center">
-                                      <AlertCircle className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                      <span>{item.entry.passed_user_ids.length} usuário(s) passaram</span>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="flex items-center">
-                                  <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                  <span>Aguardando para entrar na fila</span>
-                                </div>
-                              )}
-                            </div>
+                             <div className="space-y-1 text-sm text-gray-600">
+                               {item.type === 'empty-slot' ? (
+                                 <div className="flex items-center">
+                                   <Plus className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                   <span>Slot disponível para ocupação</span>
+                                 </div>
+                               ) : (
+                                 <>
+                                   <div className="flex items-center">
+                                     <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                     <span className="truncate">{item.user.email}</span>
+                                   </div>
+                                   {item.type === 'queue' ? (
+                                     <>
+                                       <div className="flex items-center">
+                                         <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                         <span>Adicionado em {formatDate(item.entry.created_at)}</span>
+                                       </div>
+                                       {item.entry.passed_user_ids.length > 0 && (
+                                         <div className="flex items-center">
+                                           <AlertCircle className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                           <span>{item.entry.passed_user_ids.length} usuário(s) passaram</span>
+                                         </div>
+                                       )}
+                                     </>
+                                   ) : (
+                                     <div className="flex items-center">
+                                       <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                       <span>Aguardando para entrar na fila</span>
+                                     </div>
+                                   )}
+                                 </>
+                               )}
+                             </div>
                           </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-col items-end space-y-3">
-                          {/* Status */}
-                          <div className="flex items-center text-sm">
+                           {/* Status */}
+                           <div className="flex items-center text-sm">
                              {item.type === 'queue' ? (
                                item.entry.is_receiver ? (
                                  <span className="text-green-600 flex items-center">
@@ -651,13 +702,18 @@ export default function Queue() {
                                    <span className="text-xs">Posição Ativa</span>
                                  </span>
                                )
+                             ) : item.type === 'empty-slot' ? (
+                               <span className="text-gray-500 flex items-center">
+                                 <Plus className="w-3 h-3 mr-1" />
+                                 <span className="text-xs">Disponível</span>
+                               </span>
                              ) : (
                                <span className="text-gray-600 flex items-center">
                                  <Clock className="w-3 h-3 mr-1" />
                                  <span className="text-xs">Em Espera</span>
                                </span>
                              )}
-                          </div>
+                           </div>
 
                           {/* Action Buttons */}
                           <div className="flex space-x-2">
@@ -680,6 +736,18 @@ export default function Queue() {
                                   Remover
                                 </button>
                               </>
+                            ) : item.type === 'empty-slot' ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedPosition(item.entry.position);
+                                  setIsAddModalOpen(true);
+                                }}
+                                className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200"
+                                title="Ocupar este slot"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Ocupar Slot
+                              </button>
                             ) : (
                               <button
                                 onClick={() => {
@@ -931,18 +999,18 @@ export default function Queue() {
                     Informações do Usuário
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Nome Completo</label>
-                      <p className="text-sm text-gray-900">{selectedEntry.user.firstName} {selectedEntry.user.lastName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Email</label>
-                      <p className="text-sm text-gray-900">{selectedEntry.user.email}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
-                      <p className="text-sm text-gray-900 font-mono">{selectedEntry.user.id}</p>
-                    </div>
+                     <div>
+                       <label className="text-sm font-medium text-gray-500">Nome Completo</label>
+                       <p className="text-sm text-gray-900">{selectedEntry.user?.firstName} {selectedEntry.user?.lastName}</p>
+                     </div>
+                     <div>
+                       <label className="text-sm font-medium text-gray-500">Email</label>
+                       <p className="text-sm text-gray-900">{selectedEntry.user?.email}</p>
+                     </div>
+                     <div>
+                       <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
+                       <p className="text-sm text-gray-900 font-mono">{selectedEntry.user?.id}</p>
+                     </div>
                   </div>
                 </div>
 
@@ -1044,12 +1112,12 @@ export default function Queue() {
                 <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
                   <User className="h-6 w-6 text-gray-600" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {entryToDelete.user.firstName} {entryToDelete.user.lastName}
-                  </h3>
-                  <p className="text-sm text-gray-600">{entryToDelete.user.email}</p>
-                </div>
+                 <div>
+                   <h3 className="text-lg font-semibold text-gray-900">
+                     {entryToDelete.user?.firstName} {entryToDelete.user?.lastName}
+                   </h3>
+                   <p className="text-sm text-gray-600">{entryToDelete.user?.email}</p>
+                 </div>
               </div>
               
               <p className="text-gray-700 mb-6">

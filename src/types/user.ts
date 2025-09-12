@@ -87,10 +87,10 @@ export interface QueueEntry {
   donation_number: number;
   is_receiver: boolean;
   passed_user_ids: string[];
-  user_id: string;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
-  user: {
+  user?: {
     id: string;
     firstName: string;
     lastName: string;
