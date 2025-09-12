@@ -719,7 +719,7 @@ export default function Users() {
                             <img
                               src={`data:image/png;base64,${selectedUser.pixQrCode}`}
                               alt="PIX QR Code"
-                              className="w-32 h-32 border border-gray-300 rounded-lg"
+                              className="w-48 h-48 border border-gray-300 rounded-lg"
                             />
                           </div>
                         </div>
@@ -744,7 +744,7 @@ export default function Users() {
                                   <img
                                     src={`data:image/png;base64,${selectedUser.btcQrCode}`}
                                     alt="Bitcoin QR Code"
-                                    className="w-32 h-32 border border-gray-300 rounded-lg"
+                                    className="w-48 h-48 border border-gray-300 rounded-lg"
                                   />
                                 </div>
                               </div>
@@ -760,7 +760,7 @@ export default function Users() {
                                   <img
                                     src={`data:image/png;base64,${selectedUser.usdtQrCode}`}
                                     alt="USDT QR Code"
-                                    className="w-32 h-32 border border-gray-300 rounded-lg"
+                                    className="w-48 h-48 border border-gray-300 rounded-lg"
                                   />
                                 </div>
                               </div>
