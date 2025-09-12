@@ -21,7 +21,6 @@ export default function Queue() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
   const [allApprovedUsers, setAllApprovedUsers] = useState<UserType[]>([]);
-  const [selectedDonationNumber, setSelectedDonationNumber] = useState<number>(1);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<number>(1);
   const [addLoading, setAddLoading] = useState(false);
@@ -187,7 +186,6 @@ export default function Queue() {
     setIsAddModalOpen(false);
     setSelectedUserId('');
     setSelectedPosition(1);
-    setSelectedDonationNumber(1);
   };
 
   const confirmAddToQueue = async () => {
@@ -198,7 +196,7 @@ export default function Queue() {
       
       const newEntry: CreateQueueEntryRequest = {
         position: selectedPosition,
-        donation_number: selectedDonationNumber,
+        donation_number: 0,
         user_id: selectedUserId,
         is_receiver: false,
         passed_user_ids: []
@@ -361,16 +359,16 @@ export default function Queue() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <h2 className="text-2xl font-bold text-gray-800 mr-3">Slots de Participantes</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mr-3">Vagas de Participantes</h2>
                {getAvailableSlotsCount() === 0 && getTotalSlotsCount() >= MAX_QUEUE_SLOTS && (
                  <div className="flex items-center text-red-600">
                    <AlertCircle className="h-5 w-5 mr-1" />
-                   <span className="text-sm font-medium">Todos os slots estão ocupados</span>
+                   <span className="text-sm font-medium">Todas as vagas estão ocupadas</span>
                  </div>
                )}
             </div>
              <div className="text-right">
-               <div className="text-3xl font-bold text-gray-900">{getOccupiedSlotsCount()}</div>
+               <div className="text-3xl font-bold text-gray-900">{getOccupiedSlotsCount()}/100</div>
                <div className="text-sm text-gray-600">Participantes</div>
              </div>
           </div>
@@ -379,10 +377,6 @@ export default function Queue() {
           <div className="space-y-4">
             {/* Progress Bar */}
             <div className="w-full">
-               <div className="flex justify-between text-xs text-gray-600 mb-1">
-                 <span>0 ocupados</span>
-                 <span>{getTotalSlotsCount()} slots</span>
-               </div>
                <div className="w-full bg-gray-200 rounded-full h-3">
                  <div 
                    className={`h-3 rounded-full transition-all duration-300 ${
@@ -404,7 +398,7 @@ export default function Queue() {
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                   <p className="text-sm text-red-700">
-                    <strong>Nenhum slot disponível.</strong> Todos os {getTotalSlotsCount()} slots estão ocupados.
+                    <strong>Nenhuma vaga disponível.</strong> Todas as {getTotalSlotsCount()} vagas estão ocupadas.
                   </p>
                 </div>
               </div>
@@ -605,7 +599,7 @@ export default function Queue() {
                              <div className="flex items-center space-x-2 mb-2">
                                <h4 className="text-sm font-medium text-gray-900 truncate">
                                  {item.type === 'empty-slot' ? (
-                                   `Slot Vazio - Posição ${item.entry.position}`
+                                   `Vaga Vazia - Posição ${item.entry.position}`
                                  ) : (
                                    `${item.user.firstName} ${item.user.lastName}`
                                  )}
@@ -650,7 +644,7 @@ export default function Queue() {
                                {item.type === 'empty-slot' ? (
                                  <div className="flex items-center">
                                    <Plus className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                   <span>Slot disponível para ocupação</span>
+                                   <span>Vaga disponível para ocupação</span>
                                  </div>
                                ) : (
                                  <>
@@ -740,10 +734,10 @@ export default function Queue() {
                                   setIsAddModalOpen(true);
                                 }}
                                 className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200"
-                                title="Ocupar este slot"
+                                title="Ocupar esta vaga"
                               >
                                 <Plus className="w-3 h-3 mr-1" />
-                                Ocupar Slot
+                                Ocupar Vaga
                               </button>
                             ) : (
                               <button
@@ -882,18 +876,6 @@ export default function Queue() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número da Doação
-                </label>
-                <input
-                  type="number"
-                  value={selectedDonationNumber}
-                  onChange={(e) => setSelectedDonationNumber(parseInt(e.target.value) || 1)}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
