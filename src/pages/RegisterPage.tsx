@@ -435,9 +435,6 @@ export default function RegisterPage() {
       { value: 'random', label: 'Chave Aleatória' }
     ];
 
-    // Debug: verificar valores atuais
-    console.log('Bank value:', formData.bank);
-    console.log('PixKeyType value:', formData.pixKeyType);
 
     return (
       <div className="space-y-4">
