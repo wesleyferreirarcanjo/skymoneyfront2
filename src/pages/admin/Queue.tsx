@@ -1,76 +1,88 @@
 import { useState, useEffect } from 'react';
-import { authAPI } from '../../lib/api';
+import { queueAPI, authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { Clock, Users, CheckCircle, XCircle, AlertCircle, Search, X, Eye, Calendar, User, Mail, Phone, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { User as UserType } from '../../types/user';
+import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target } from 'lucide-react';
+import { QueueEntry, User as UserType, CreateQueueEntryRequest } from '../../types/user';
 
 export default function Queue() {
-  const [queueUsers, setQueueUsers] = useState<UserType[]>([]);
+  const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [usersPerPage] = useState(10);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [entriesPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [allQueueUsers, setAllQueueUsers] = useState<UserType[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [allQueueEntries, setAllQueueEntries] = useState<QueueEntry[]>([]);
+  const [selectedEntry, setSelectedEntry] = useState<QueueEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [userToVerify, setUserToVerify] = useState<UserType | null>(null);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [userToReject, setUserToReject] = useState<UserType | null>(null);
-  const [rejectLoading, setRejectLoading] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
+  const [selectedDonationNumber, setSelectedDonationNumber] = useState<number>(1);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedPosition, setSelectedPosition] = useState<number>(1);
+  const [addLoading, setAddLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<QueueEntry | null>(null);
 
   useEffect(() => {
-    fetchQueueUsers();
+    fetchQueueEntries();
+    fetchAvailableUsers();
   }, []);
 
   useEffect(() => {
-    filterQueueUsers();
-  }, [searchTerm, allQueueUsers, currentPage]);
+    filterQueueEntries();
+  }, [searchTerm, allQueueEntries, currentPage]);
 
-  const fetchQueueUsers = async () => {
+  const fetchQueueEntries = async () => {
     try {
       setLoading(true);
-      const allUsers = await authAPI.getUsers();
-      // Filter only unverified users (not admin and not adminApproved)
-      const queueUsers = (allUsers || []).filter(user => 
-        user.role.toLowerCase() !== 'admin' && !user.adminApproved
-      );
-      setAllQueueUsers(queueUsers);
+      const entries = await queueAPI.getQueueEntries();
+      setAllQueueEntries(entries);
     } catch (error) {
-      console.error('Error fetching queue users:', error);
+      console.error('Error fetching queue entries:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filterQueueUsers = () => {
-    if (!allQueueUsers.length) return;
+  const fetchAvailableUsers = async () => {
+    try {
+      const users = await authAPI.getUsers();
+      // Filter only approved users (not admin and adminApproved)
+      const approvedUsers = (users || []).filter(user => 
+        user.role.toLowerCase() !== 'admin' && user.adminApproved
+      );
+      setAvailableUsers(approvedUsers);
+    } catch (error) {
+      console.error('Error fetching available users:', error);
+    }
+  };
 
-    let filteredUsers = allQueueUsers;
+  const filterQueueEntries = () => {
+    if (!allQueueEntries.length) return;
+
+    let filteredEntries = allQueueEntries;
 
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filteredUsers = filteredUsers.filter(user => 
-        user.firstName.toLowerCase().includes(searchLower) ||
-        user.lastName.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower) ||
-        user.phone.includes(searchTerm)
+      filteredEntries = filteredEntries.filter(entry => 
+        entry.user.firstName.toLowerCase().includes(searchLower) ||
+        entry.user.lastName.toLowerCase().includes(searchLower) ||
+        entry.user.email.toLowerCase().includes(searchLower) ||
+        entry.donation_number.toString().includes(searchTerm)
       );
     }
 
     // Apply pagination to filtered results
-    const startIndex = (currentPage - 1) * usersPerPage;
-    const endIndex = startIndex + usersPerPage;
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+    const startIndex = (currentPage - 1) * entriesPerPage;
+    const endIndex = startIndex + entriesPerPage;
+    const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
 
-    setQueueUsers(paginatedUsers);
-    setTotalUsers(filteredUsers.length);
-    setTotalPages(Math.ceil(filteredUsers.length / usersPerPage));
+    setQueueEntries(paginatedEntries);
+    setTotalEntries(filteredEntries.length);
+    setTotalPages(Math.ceil(filteredEntries.length / entriesPerPage));
   };
 
   const handleSearch = (value: string) => {
@@ -87,108 +99,102 @@ export default function Queue() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'suspended':
-        return 'bg-orange-100 text-orange-800';
-      case 'blocked':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleVerifyUser = (userId: string) => {
-    const user = allQueueUsers.find(u => u.id === userId);
-    if (user) {
-      setUserToVerify(user);
-      setIsConfirmModalOpen(true);
-    }
-  };
-
-  const handleRejectUser = (userId: string) => {
-    const user = allQueueUsers.find(u => u.id === userId);
-    if (user) {
-      setUserToReject(user);
-      setIsRejectModalOpen(true);
-    }
-  };
-
-  const confirmVerifyUser = async () => {
-    if (!userToVerify) return;
-
-    try {
-      setVerifyLoading(true);
-      
-      // Call the PATCH /users/:id/approve endpoint
-      await authAPI.approveUser(userToVerify.id);
-      console.log('User approved successfully:', userToVerify.id);
-      
-      // Reload queue users data
-      await fetchQueueUsers();
-      
-      // Close modal
-      setIsConfirmModalOpen(false);
-      setUserToVerify(null);
-    } catch (error: any) {
-      console.error('Error approving user:', error);
-      alert(error.message || 'Erro ao aprovar usuário');
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
-  const confirmRejectUser = async () => {
-    if (!userToReject) return;
-
-    try {
-      setRejectLoading(true);
-      
-      // Here you would call a reject user API endpoint
-      // For now, we'll just remove from queue by refreshing
-      console.log('User rejected:', userToReject.id, 'Reason:', rejectReason);
-      
-      // Reload queue users data
-      await fetchQueueUsers();
-      
-      // Close modal and reset
-      setIsRejectModalOpen(false);
-      setUserToReject(null);
-      setRejectReason('');
-    } catch (error: any) {
-      console.error('Error rejecting user:', error);
-      alert(error.message || 'Erro ao rejeitar usuário');
-    } finally {
-      setRejectLoading(false);
-    }
-  };
-
-  const closeConfirmModal = () => {
-    setIsConfirmModalOpen(false);
-    setUserToVerify(null);
-  };
-
-  const closeRejectModal = () => {
-    setIsRejectModalOpen(false);
-    setUserToReject(null);
-    setRejectReason('');
-  };
-
-  const handleViewProfile = (userId: string) => {
-    const user = allQueueUsers.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
+  const handleViewEntry = (entryId: string) => {
+    const entry = allQueueEntries.find(e => e.id === entryId);
+    if (entry) {
+      setSelectedEntry(entry);
       setIsModalOpen(true);
     }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setSelectedUser(null);
+    setSelectedEntry(null);
+  };
+
+  const handleAddToQueue = () => {
+    setIsAddModalOpen(true);
+    // Set default position to next available
+    const maxPosition = Math.max(...allQueueEntries.map(e => e.position), 0);
+    setSelectedPosition(maxPosition + 1);
+  };
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setSelectedUserId('');
+    setSelectedPosition(1);
+    setSelectedDonationNumber(1);
+  };
+
+  const confirmAddToQueue = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      setAddLoading(true);
+      
+      const newEntry: CreateQueueEntryRequest = {
+        position: selectedPosition,
+        donation_number: selectedDonationNumber,
+        user_id: selectedUserId,
+        is_receiver: false,
+        passed_user_ids: []
+      };
+
+      await queueAPI.addToQueue(newEntry);
+      await fetchQueueEntries();
+      closeAddModal();
+    } catch (error: any) {
+      console.error('Error adding to queue:', error);
+      alert(error.message || 'Erro ao adicionar à fila');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const handleSetReceiver = async (entryId: string) => {
+    const entry = allQueueEntries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    try {
+      setActionLoading(entryId);
+      await queueAPI.setReceiver(entry.donation_number, entry.user_id);
+      await fetchQueueEntries();
+    } catch (error: any) {
+      console.error('Error setting receiver:', error);
+      alert(error.message || 'Erro ao definir como receptor');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+
+  const handleDeleteEntry = (entryId: string) => {
+    const entry = allQueueEntries.find(e => e.id === entryId);
+    if (entry) {
+      setEntryToDelete(entry);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const confirmDeleteEntry = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      setActionLoading(entryToDelete.id);
+      await queueAPI.removeFromQueue(entryToDelete.id);
+      await fetchQueueEntries();
+      closeDeleteModal();
+    } catch (error: any) {
+      console.error('Error deleting entry:', error);
+      alert(error.message || 'Erro ao remover da fila');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setEntryToDelete(null);
   };
 
   const handlePageChange = (page: number) => {
@@ -224,30 +230,39 @@ export default function Queue() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Fila de Aprovação</h1>
-              <p className="text-gray-600">Usuários aguardando aprovação do administrador</p>
+              <h1 className="text-3xl font-bold text-gray-800">Fila de Doações</h1>
+              <p className="text-gray-600">Gerenciar fila de doações e receptores</p>
             </div>
-            <button
-              onClick={fetchQueueUsers}
-              disabled={loading}
-              className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleAddToQueue}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar à Fila
+              </button>
+              <button
+                onClick={fetchQueueEntries}
+                disabled={loading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Atualizar
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-yellow-100">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="p-3 rounded-full bg-blue-100">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aguardando</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+                <p className="text-sm font-medium text-gray-600">Total na Fila</p>
+                <p className="text-2xl font-bold text-gray-900">{totalEntries}</p>
               </div>
             </div>
           </div>
@@ -255,23 +270,41 @@ export default function Queue() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+                <Crown className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aprovados Hoje</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-sm font-medium text-gray-600">Receptores Ativos</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {allQueueEntries.filter(e => e.is_receiver).length}
+                </p>
               </div>
             </div>
           </div>
           
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-red-100">
-                <XCircle className="h-6 w-6 text-red-600" />
+              <div className="p-3 rounded-full bg-yellow-100">
+                <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Rejeitados Hoje</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-sm font-medium text-gray-600">Aguardando</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {allQueueEntries.filter(e => !e.is_receiver).length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-purple-100">
+                <Target className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Doações Ativas</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(allQueueEntries.map(e => e.donation_number)).size}
+                </p>
               </div>
             </div>
           </div>
@@ -290,7 +323,7 @@ export default function Queue() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Buscar por nome, email ou telefone..."
+                  placeholder="Buscar por nome, email ou número de doação..."
                   className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {searchTerm && (
@@ -329,17 +362,17 @@ export default function Queue() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Usuários na Fila
+                  Entradas na Fila
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   {searchTerm ? (
-                    totalUsers > 0 
-                      ? `${totalUsers} resultado${totalUsers !== 1 ? 's' : ''} encontrado${totalUsers !== 1 ? 's' : ''} para "${searchTerm}" - Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)}`
+                    totalEntries > 0 
+                      ? `${totalEntries} resultado${totalEntries !== 1 ? 's' : ''} encontrado${totalEntries !== 1 ? 's' : ''} para "${searchTerm}" - Mostrando ${((currentPage - 1) * entriesPerPage) + 1} a ${Math.min(currentPage * entriesPerPage, totalEntries)}`
                       : `Nenhum resultado encontrado para "${searchTerm}"`
                   ) : (
-                    totalUsers > 0 
-                      ? `Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)} de ${totalUsers} usuários`
-                      : 'Nenhum usuário na fila'
+                    totalEntries > 0 
+                      ? `Mostrando ${((currentPage - 1) * entriesPerPage) + 1} a ${Math.min(currentPage * entriesPerPage, totalEntries)} de ${totalEntries} entradas`
+                      : 'Nenhuma entrada na fila'
                   )}
                 </p>
               </div>
@@ -358,110 +391,145 @@ export default function Queue() {
             </div>
           ) : (
             <div className="p-6">
-              {queueUsers.length === 0 ? (
+              {queueEntries.length === 0 ? (
                 <div className="text-center py-8">
-                  <Clock className="mx-auto h-12 w-12 text-gray-400" />
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    {searchTerm ? 'Nenhum usuário encontrado' : 'Fila vazia'}
+                    {searchTerm ? 'Nenhuma entrada encontrada' : 'Fila vazia'}
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
                     {searchTerm 
-                      ? `Não foram encontrados usuários para "${searchTerm}". Tente uma busca diferente.`
-                      : 'Não há usuários aguardando aprovação no momento.'
+                      ? `Não foram encontradas entradas para "${searchTerm}". Tente uma busca diferente.`
+                      : 'Não há entradas na fila de doações no momento.'
                     }
                   </p>
-                  {searchTerm && (
+                  {searchTerm ? (
                     <button
                       onClick={clearSearch}
                       className="mt-4 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                     >
                       Limpar busca
                     </button>
+                  ) : (
+                    <button
+                      onClick={handleAddToQueue}
+                      className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Adicionar primeira entrada
+                    </button>
                   )}
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {queueUsers.map((userData) => (
-                    <div key={userData.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  {queueEntries.map((entry) => (
+                    <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between">
-                        {/* User Info */}
+                        {/* Entry Info */}
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="flex-shrink-0">
-                            {userData.avatar ? (
-                              <img
-                                className="h-12 w-12 rounded-full"
-                                src={userData.avatar}
-                                alt={`${userData.firstName} ${userData.lastName}`}
-                              />
-                            ) : (
-                              <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                                <User className="h-6 w-6 text-gray-600" />
-                              </div>
-                            )}
+                            <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                              <User className="h-6 w-6 text-gray-600" />
+                            </div>
                           </div>
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-2">
                               <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {userData.firstName} {userData.lastName}
+                                {entry.user.firstName} {entry.user.lastName}
                               </h4>
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(userData.status)}`}>
-                                {userData.status.toUpperCase()}
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                entry.is_receiver 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {entry.is_receiver ? (
+                                  <>
+                                    <Crown className="h-3 w-3 mr-1" />
+                                    RECEPTOR
+                                  </>
+                                ) : (
+                                  <>
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    AGUARDANDO
+                                  </>
+                                )}
                               </span>
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                <Clock className="h-3 w-3 mr-1" />
-                                AGUARDANDO
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                Posição {entry.position}
                               </span>
                             </div>
                             
                             <div className="space-y-1 text-sm text-gray-600">
                               <div className="flex items-center">
                                 <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span className="truncate">{userData.email}</span>
+                                <span className="truncate">{entry.user.email}</span>
                               </div>
                               <div className="flex items-center">
-                                <Phone className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span>{userData.phone}</span>
+                                <Target className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                <span>Doação #{entry.donation_number}</span>
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                <span>Cadastrado em {formatDate(userData.createdAt)}</span>
+                                <span>Adicionado em {formatDate(entry.created_at)}</span>
                               </div>
+                              {entry.passed_user_ids.length > 0 && (
+                                <div className="flex items-center">
+                                  <AlertCircle className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                  <span>{entry.passed_user_ids.length} usuário(s) passaram</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-col items-end space-y-3">
-                          {/* Waiting Time */}
-                          <div className="flex items-center text-sm text-yellow-600">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            <span className="text-xs">
-                              Aguardando aprovação
-                            </span>
+                          {/* Status */}
+                          <div className="flex items-center text-sm">
+                            {entry.is_receiver ? (
+                              <span className="text-green-600 flex items-center">
+                                <Crown className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Receptor Ativo</span>
+                              </span>
+                            ) : (
+                              <span className="text-yellow-600 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Aguardando</span>
+                              </span>
+                            )}
                           </div>
 
                           {/* Action Buttons */}
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleViewProfile(userData.id)}
+                              onClick={() => handleViewEntry(entry.id)}
                               className="flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                              title="Ver perfil completo do usuário"
+                              title="Ver detalhes da entrada"
                             >
                               <Eye className="w-3 h-3 mr-1" />
-                              Ver Perfil
+                              Ver
                             </button>
+                            {!entry.is_receiver && (
+                              <button
+                                onClick={() => handleSetReceiver(entry.id)}
+                                disabled={actionLoading === entry.id}
+                                className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50"
+                              >
+                                {actionLoading === entry.id ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-green-600 mr-1"></div>
+                                ) : (
+                                  <Crown className="w-3 h-3 mr-1" />
+                                )}
+                                Definir Receptor
+                              </button>
+                            )}
                             <button
-                              onClick={() => handleVerifyUser(userData.id)}
-                              className="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                              disabled={actionLoading === entry.id}
+                              className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50"
                             >
-                              Aprovar
-                            </button>
-                            <button
-                              onClick={() => handleRejectUser(userData.id)}
-                              className="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-red-100 text-red-800 hover:bg-red-200"
-                            >
-                              Rejeitar
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Remover
                             </button>
                           </div>
                         </div>
@@ -537,7 +605,7 @@ export default function Queue() {
                 </div>
                 
                 <div className="text-sm text-gray-700">
-                  {usersPerPage} usuários por página
+                  {entriesPerPage} entradas por página
                 </div>
               </div>
             </div>
@@ -545,20 +613,118 @@ export default function Queue() {
         </div>
       </div>
 
-      {/* User Profile Modal - Same as Users.tsx */}
-      {isModalOpen && selectedUser && (
+      {/* Add to Queue Modal */}
+      {isAddModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeAddModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Adicionar à Fila
+              </h2>
+              <button
+                onClick={closeAddModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Usuário
+                </label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecione um usuário</option>
+                  {availableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Número da Doação
+                </label>
+                <input
+                  type="number"
+                  value={selectedDonationNumber}
+                  onChange={(e) => setSelectedDonationNumber(parseInt(e.target.value) || 1)}
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Posição na Fila
+                </label>
+                <input
+                  type="number"
+                  value={selectedPosition}
+                  onChange={(e) => setSelectedPosition(parseInt(e.target.value) || 1)}
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeAddModal}
+                disabled={addLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmAddToQueue}
+                disabled={addLoading || !selectedUserId}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {addLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adicionando...
+                  </>
+                ) : (
+                  'Adicionar à Fila'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Entry Details Modal */}
+      {isModalOpen && selectedEntry && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={closeModal}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">
-                Perfil do Usuário
+                Detalhes da Entrada
               </h2>
               <button
                 onClick={closeModal}
@@ -568,224 +734,99 @@ export default function Queue() {
               </button>
             </div>
 
-            {/* Modal Content - Same structure as Users.tsx but simplified for queue view */}
+            {/* Modal Content */}
             <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* User Avatar and Basic Info */}
-                <div className="lg:col-span-1">
-                  <div className="text-center">
-                    {selectedUser.avatar ? (
-                      <img
-                        src={selectedUser.avatar}
-                        alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
-                        className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center mx-auto mb-4">
-                        <User className="h-16 w-16 text-gray-600" />
-                      </div>
-                    )}
-                    
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {selectedUser.firstName} {selectedUser.lastName}
-                    </h3>
-                    
-                    <div className="flex justify-center space-x-2 mb-4">
-                      <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusBadgeColor(selectedUser.status)}`}>
-                        {selectedUser.status.toUpperCase()}
-                      </span>
-                      <span className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        <Clock className="h-3 w-3 mr-1" />
-                        AGUARDANDO
-                      </span>
-                    </div>
+              <div className="space-y-6">
+                {/* Entry Status */}
+                <div className="text-center">
+                  <div className="flex justify-center space-x-2 mb-4">
+                    <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                      selectedEntry.is_receiver 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedEntry.is_receiver ? (
+                        <>
+                          <Crown className="h-3 w-3 mr-1" />
+                          RECEPTOR ATIVO
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-3 w-3 mr-1" />
+                          AGUARDANDO
+                        </>
+                      )}
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                      Posição {selectedEntry.position}
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Verification Status */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-center text-yellow-600">
-                        <AlertCircle className="w-3 h-3 mr-2" />
-                        <span className="text-sm font-medium">
-                          Aguardando aprovação do admin
-                        </span>
-                      </div>
+                {/* User Information */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Informações do Usuário
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Nome Completo</label>
+                      <p className="text-sm text-gray-900">{selectedEntry.user.firstName} {selectedEntry.user.lastName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Email</label>
+                      <p className="text-sm text-gray-900">{selectedEntry.user.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
+                      <p className="text-sm text-gray-900 font-mono">{selectedEntry.user.id}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* User Details - Same as Users.tsx */}
-                <div className="lg:col-span-2 space-y-6">
-                  {/* Personal Information */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <User className="h-5 w-5 mr-2" />
-                      Informações Pessoais
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Nome Completo</label>
-                        <p className="text-sm text-gray-900">{selectedUser.firstName} {selectedUser.lastName}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">CPF</label>
-                        <p className="text-sm text-gray-900">{selectedUser.cpf}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Data de Nascimento</label>
-                        <p className="text-sm text-gray-900">{formatDate(selectedUser.birthDate)}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
-                        <p className="text-sm text-gray-900 font-mono">{selectedUser.id}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <Mail className="h-5 w-5 mr-2" />
-                      Informações de Contato
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="text-sm text-gray-900 flex items-center">
-                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                          {selectedUser.email}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Telefone</label>
-                        <p className="text-sm text-gray-900 flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                          {selectedUser.phone}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Banking Information */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <CreditCard className="h-5 w-5 mr-2" />
-                      Informações Bancárias
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Banco</label>
-                        <p className="text-sm text-gray-900">{selectedUser.bank}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Agência</label>
-                        <p className="text-sm text-gray-900">{selectedUser.agency}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Conta</label>
-                        <p className="text-sm text-gray-900">{selectedUser.account}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* PIX Information */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <QrCode className="h-5 w-5 mr-2" />
-                      PIX
-                    </h4>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Chave PIX</label>
-                        <p className="text-sm text-gray-900 font-mono">{selectedUser.pixKey}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Tipo de Chave</label>
-                        <p className="text-sm text-gray-900">{selectedUser.pixKeyType}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Nome do Titular</label>
-                        <p className="text-sm text-gray-900">{selectedUser.pixOwnerName}</p>
-                      </div>
-                      {selectedUser.pixQrCode && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">QR Code PIX</label>
-                          <div className="mt-2">
-                            <img
-                              src={`data:image/png;base64,${selectedUser.pixQrCode}`}
-                              alt="PIX QR Code"
-                              className="border border-gray-300 rounded-lg"
-                              style={{ width: '200px', height: '200px' }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Crypto Information */}
-                  {(selectedUser.btcAddress || selectedUser.usdtAddress) && (
+                {/* Queue Information */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Target className="h-5 w-5 mr-2" />
+                    Informações da Fila
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                        <Bitcoin className="h-5 w-5 mr-2" />
-                        Criptomoedas
-                      </h4>
-                      <div className="space-y-6">
-                        {selectedUser.btcAddress && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Endereço Bitcoin</label>
-                            <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.btcAddress}</p>
-                            {selectedUser.btcQrCode && (
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">QR Code Bitcoin</label>
-                                <div className="mt-2">
-                                  <img
-                                    src={`data:image/png;base64,${selectedUser.btcQrCode}`}
-                                    alt="Bitcoin QR Code"
-                                    className="border border-gray-300 rounded-lg"
-                                    style={{ width: '200px', height: '200px' }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {selectedUser.usdtAddress && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Endereço USDT</label>
-                            <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.usdtAddress}</p>
-                            {selectedUser.usdtQrCode && (
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">QR Code USDT</label>
-                                <div className="mt-2">
-                                  <img
-                                    src={`data:image/png;base64,${selectedUser.usdtQrCode}`}
-                                    alt="USDT QR Code"
-                                    className="border border-gray-300 rounded-lg"
-                                    style={{ width: '200px', height: '200px' }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                      <label className="text-sm font-medium text-gray-500">Número da Doação</label>
+                      <p className="text-sm text-gray-900">#{selectedEntry.donation_number}</p>
                     </div>
-                  )}
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Posição na Fila</label>
+                      <p className="text-sm text-gray-900">{selectedEntry.position}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Status</label>
+                      <p className="text-sm text-gray-900">
+                        {selectedEntry.is_receiver ? 'Receptor Ativo' : 'Aguardando'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Usuários que Passaram</label>
+                      <p className="text-sm text-gray-900">{selectedEntry.passed_user_ids.length}</p>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Account Dates */}
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <Calendar className="h-5 w-5 mr-2" />
-                      Datas da Conta
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Criado em</label>
-                        <p className="text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Atualizado em</label>
-                        <p className="text-sm text-gray-900">{formatDate(selectedUser.updatedAt)}</p>
-                      </div>
+                {/* Dates */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Datas
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Adicionado em</label>
+                      <p className="text-sm text-gray-900">{formatDate(selectedEntry.created_at)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Atualizado em</label>
+                      <p className="text-sm text-gray-900">{formatDate(selectedEntry.updated_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -800,28 +841,43 @@ export default function Queue() {
               >
                 Fechar
               </button>
+              {!selectedEntry.is_receiver && (
+                <button
+                  onClick={() => handleSetReceiver(selectedEntry.id)}
+                  disabled={actionLoading === selectedEntry.id}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {actionLoading === selectedEntry.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Definindo...
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="h-4 w-4 mr-2" />
+                      Definir como Receptor
+                    </>
+                  )}
+                </button>
+              )}
               <button
-                onClick={() => handleRejectUser(selectedUser.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors"
+                onClick={() => handleDeleteEntry(selectedEntry.id)}
+                disabled={actionLoading === selectedEntry.id}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Rejeitar
-              </button>
-              <button
-                onClick={() => handleVerifyUser(selectedUser.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 transition-colors"
-              >
-                Aprovar
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remover da Fila
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Approval Confirmation Modal */}
-      {isConfirmModalOpen && userToVerify && (
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && entryToDelete && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={closeConfirmModal}
+          onClick={closeDeleteModal}
         >
           <div 
             className="bg-white rounded-lg shadow-xl max-w-md w-full"
@@ -830,10 +886,10 @@ export default function Queue() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                Confirmar Aprovação
+                Remover da Fila
               </h2>
               <button
-                onClick={closeConfirmModal}
+                onClick={closeDeleteModal}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="h-6 w-6" />
@@ -843,138 +899,56 @@ export default function Queue() {
             {/* Modal Content */}
             <div className="p-6">
               <div className="flex items-center space-x-4 mb-4">
-                {userToVerify.avatar ? (
-                  <img
-                    src={userToVerify.avatar}
-                    alt={`${userToVerify.firstName} ${userToVerify.lastName}`}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <User className="h-6 w-6 text-gray-600" />
-                  </div>
-                )}
+                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <User className="h-6 w-6 text-gray-600" />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {userToVerify.firstName} {userToVerify.lastName}
+                    {entryToDelete.user.firstName} {entryToDelete.user.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600">{userToVerify.email}</p>
+                  <p className="text-sm text-gray-600">{entryToDelete.user.email}</p>
                 </div>
               </div>
               
               <p className="text-gray-700 mb-6">
-                Tem certeza que deseja aprovar este usuário? Esta ação permitirá que o usuário tenha acesso completo ao sistema.
+                Tem certeza que deseja remover este usuário da fila? Esta ação não pode ser desfeita.
               </p>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={closeConfirmModal}
-                disabled={verifyLoading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmVerifyUser}
-                disabled={verifyLoading}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {verifyLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Aprovando...
-                  </>
-                ) : (
-                  'Confirmar Aprovação'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rejection Modal */}
-      {isRejectModalOpen && userToReject && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={closeRejectModal}
-        >
-          <div 
-            className="bg-white rounded-lg shadow-xl max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
-                Rejeitar Usuário
-              </h2>
-              <button
-                onClick={closeRejectModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="flex items-center space-x-4 mb-4">
-                {userToReject.avatar ? (
-                  <img
-                    src={userToReject.avatar}
-                    alt={`${userToReject.firstName} ${userToReject.lastName}`}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <User className="h-6 w-6 text-gray-600" />
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Atenção:</p>
+                    <p>Se este usuário for o receptor ativo, a fila será reorganizada automaticamente.</p>
                   </div>
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {userToReject.firstName} {userToReject.lastName}
-                  </h3>
-                  <p className="text-sm text-gray-600">{userToReject.email}</p>
                 </div>
               </div>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Motivo da rejeição (opcional)
-                </label>
-                <textarea
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows={3}
-                  placeholder="Descreva o motivo da rejeição..."
-                />
-              </div>
             </div>
 
             {/* Modal Footer */}
             <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
               <button
-                onClick={closeRejectModal}
-                disabled={rejectLoading}
+                onClick={closeDeleteModal}
+                disabled={actionLoading === entryToDelete.id}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={confirmRejectUser}
-                disabled={rejectLoading}
+                onClick={confirmDeleteEntry}
+                disabled={actionLoading === entryToDelete.id}
                 className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {rejectLoading ? (
+                {actionLoading === entryToDelete.id ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Rejeitando...
+                    Removendo...
                   </>
                 ) : (
-                  'Confirmar Rejeição'
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Confirmar Remoção
+                  </>
                 )}
               </button>
             </div>

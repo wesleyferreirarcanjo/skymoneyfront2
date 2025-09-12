@@ -25,8 +25,8 @@ export default function AdminLayout() {
 
   const menuItems = [
     { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3, path: '/admin/dashboard' },
-    { id: 'queue' as AdminView, label: 'Fila', icon: Clock, path: '/admin/queue' },
     { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon, path: '/admin/users' },
+    { id: 'queue' as AdminView, label: 'Fila', icon: Clock, path: '/admin/queue' },
     { id: 'settings' as AdminView, label: 'Configurações', icon: Settings, path: '/admin/settings' },
   ];
 

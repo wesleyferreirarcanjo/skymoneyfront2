@@ -1,4 +1,4 @@
-import { AuthResponse, LoginRequest, RegisterRequest } from '../types/user';
+import { AuthResponse, LoginRequest, RegisterRequest, QueueEntry, CreateQueueEntryRequest, UpdateQueueEntryRequest, ReorderQueueRequest } from '../types/user';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -213,6 +213,100 @@ export const authAPI = {
       return result;
     } catch (error: any) {
       console.error('Approve user error:', error);
+      throw error;
+    }
+  },
+};
+
+export const queueAPI = {
+  // Get all queue entries
+  getQueueEntries: async (): Promise<QueueEntry[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/queue');
+      return result;
+    } catch (error: any) {
+      console.error('Get queue entries error:', error);
+      throw error;
+    }
+  },
+
+  // Add user to donation queue
+  addToQueue: async (data: CreateQueueEntryRequest): Promise<QueueEntry> => {
+    try {
+      const result = await makeAuthenticatedRequest('/queue', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Add to queue error:', error);
+      throw error;
+    }
+  },
+
+  // Update queue entry
+  updateQueueEntry: async (queueId: string, data: UpdateQueueEntryRequest): Promise<QueueEntry> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/queue/${queueId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Update queue entry error:', error);
+      throw error;
+    }
+  },
+
+  // Set specific user as receiver
+  setReceiver: async (donationNumber: number, userId: string): Promise<QueueEntry> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/queue/set-receiver/${donationNumber}/${userId}`, {
+        method: 'PATCH',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Set receiver error:', error);
+      throw error;
+    }
+  },
+
+  // Move to next receiver
+  nextReceiver: async (donationNumber: number): Promise<QueueEntry> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/queue/next-receiver/${donationNumber}`, {
+        method: 'PATCH',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Next receiver error:', error);
+      throw error;
+    }
+  },
+
+  // Reorder queue positions
+  reorderQueue: async (donationNumber: number, reorderData: ReorderQueueRequest[]): Promise<QueueEntry[]> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/queue/reorder/${donationNumber}`, {
+        method: 'PATCH',
+        body: JSON.stringify(reorderData),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Reorder queue error:', error);
+      throw error;
+    }
+  },
+
+  // Remove queue entry
+  removeFromQueue: async (queueId: string): Promise<{ message: string }> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/queue/${queueId}`, {
+        method: 'DELETE',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Remove from queue error:', error);
       throw error;
     }
   },
