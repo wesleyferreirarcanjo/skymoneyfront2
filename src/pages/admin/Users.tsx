@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -19,6 +19,9 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<UserType>>({});
   const [editLoading, setEditLoading] = useState(false);
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -142,6 +145,8 @@ export default function Users() {
     setIsEditModalOpen(false);
     setEditingUser(null);
     setEditFormData({});
+    setEditErrors({});
+    setConfirmPassword('');
   };
 
   const handleInputChange = (field: keyof UserType, value: any) => {
@@ -149,6 +154,15 @@ export default function Users() {
       ...prev,
       [field]: value
     }));
+    
+    // Clear error for this field when user starts typing
+    if (editErrors[field]) {
+      setEditErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleFileUpload = (field: 'avatar' | 'pixQrCode' | 'btcQrCode' | 'usdtQrCode', file: File) => {
@@ -162,30 +176,45 @@ export default function Users() {
     reader.readAsDataURL(file);
   };
 
-  const validateUserData = (data: Partial<UserType>) => {
+  const handleCopyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000); // Reset after 2 seconds
+    } catch (error) {
+      console.error('Failed to copy text: ', error);
+    }
+  };
+
+  const validateUserData = (data: Partial<UserType>): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    
     // Common regex patterns (same as register page)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^\d{11}$/;
     const cepRegex = /^\d{8}$/;
 
     // Validate required fields
-    if (!data.firstName || !data.lastName || !data.email || !data.phone || !data.cpf || !data.birthDate) {
-      throw new Error('Por favor, preencha todos os campos obrigatórios');
-    }
+    if (!data.firstName) errors.firstName = 'Nome é obrigatório';
+    if (!data.lastName) errors.lastName = 'Sobrenome é obrigatório';
+    if (!data.email) errors.email = 'Email é obrigatório';
+    if (!data.phone) errors.phone = 'Telefone é obrigatório';
+    if (!data.cpf) errors.cpf = 'CPF é obrigatório';
+    if (!data.birthDate) errors.birthDate = 'Data de nascimento é obrigatória';
 
     // Validate CPF format
     if (data.cpf && data.cpf.length !== 11) {
-      throw new Error('CPF deve ter 11 dígitos');
+      errors.cpf = 'CPF deve ter 11 dígitos';
     }
 
     // Validate email format
     if (data.email && !emailRegex.test(data.email)) {
-      throw new Error('Por favor, insira um email válido');
+      errors.email = 'Por favor, insira um email válido';
     }
 
     // Validate phone format (Brazilian phone)
     if (data.phone && !phoneRegex.test(data.phone.replace(/\D/g, ''))) {
-      throw new Error('Por favor, insira um telefone válido (11 dígitos)');
+      errors.phone = 'Por favor, insira um telefone válido (11 dígitos)';
     }
 
     // Validate birth date (must be 18+)
@@ -194,25 +223,25 @@ export default function Users() {
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
       if (age < 18) {
-        throw new Error('Usuário deve ter pelo menos 18 anos');
+        errors.birthDate = 'Usuário deve ter pelo menos 18 anos';
       }
     }
 
     // Validate CEP format
     if (data.cep && !cepRegex.test(data.cep.replace(/\D/g, ''))) {
-      throw new Error('CEP deve ter 8 dígitos');
+      errors.cep = 'CEP deve ter 8 dígitos';
     }
 
     // Validate PIX key based on type
     if (data.pixKeyType && data.pixKey) {
       if (data.pixKeyType === 'email' && !emailRegex.test(data.pixKey)) {
-        throw new Error('Chave PIX deve ser um email válido');
+        errors.pixKey = 'Chave PIX deve ser um email válido';
       }
       if (data.pixKeyType === 'phone' && !phoneRegex.test(data.pixKey.replace(/\D/g, ''))) {
-        throw new Error('Chave PIX deve ser um telefone válido (11 dígitos)');
+        errors.pixKey = 'Chave PIX deve ser um telefone válido (11 dígitos)';
       }
       if (data.pixKeyType === 'cpf' && !/^\d{11}$/.test(data.pixKey.replace(/\D/g, ''))) {
-        throw new Error('Chave PIX deve ser um CPF válido (11 dígitos)');
+        errors.pixKey = 'Chave PIX deve ser um CPF válido (11 dígitos)';
       }
     }
 
@@ -220,7 +249,7 @@ export default function Users() {
     if (data.btcAddress) {
       const btcRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$/;
       if (!btcRegex.test(data.btcAddress)) {
-        throw new Error('Endereço Bitcoin inválido');
+        errors.btcAddress = 'Endereço Bitcoin inválido';
       }
     }
 
@@ -228,14 +257,31 @@ export default function Users() {
     if (data.usdtAddress) {
       const usdtRegex = /^0x[a-fA-F0-9]{40}$/;
       if (!usdtRegex.test(data.usdtAddress)) {
-        throw new Error('Endereço USDT inválido');
+        errors.usdtAddress = 'Endereço USDT inválido';
       }
     }
 
     // Validate password if provided
     if (data.password && data.password.length < 6) {
-      throw new Error('A senha deve ter pelo menos 6 caracteres');
+      errors.password = 'A senha deve ter pelo menos 6 caracteres';
     }
+
+    return errors;
+  };
+
+  const validatePasswordConfirmation = (password: string, confirmPassword: string): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    
+    // Only validate if password is provided
+    if (password) {
+      if (!confirmPassword) {
+        errors.confirmPassword = 'Confirmação de senha é obrigatória';
+      } else if (password !== confirmPassword) {
+        errors.confirmPassword = 'As senhas não coincidem';
+      }
+    }
+    
+    return errors;
   };
 
   const handleSaveUser = async () => {
@@ -245,7 +291,31 @@ export default function Users() {
       setEditLoading(true);
       
       // Validate the form data using same rules as registration
-      validateUserData(editFormData);
+      const validationErrors = validateUserData(editFormData);
+      
+      // Validate password confirmation
+      const passwordErrors = validatePasswordConfirmation(editFormData.password || '', confirmPassword);
+      
+      // Combine all errors
+      const allErrors = { ...validationErrors, ...passwordErrors };
+      
+      // If there are validation errors, set them and focus on first error
+      if (Object.keys(allErrors).length > 0) {
+        setEditErrors(allErrors);
+        
+        // Focus on the first field with an error
+        const firstErrorField = Object.keys(allErrors)[0];
+        const errorElement = document.getElementById(firstErrorField);
+        if (errorElement) {
+          errorElement.focus();
+        }
+        
+        setEditLoading(false);
+        return;
+      }
+      
+      // Clear any existing errors
+      setEditErrors({});
       
       // Prepare the update data - exclude fields that shouldn't be sent to backend
       const updateData = { ...editFormData };
@@ -266,8 +336,8 @@ export default function Users() {
       closeEditModal();
     } catch (error: any) {
       console.error('Error updating user:', error);
-      // Show validation error to user
-      alert(error.message || 'Erro ao atualizar usuário');
+      // Show API error
+      setEditErrors({ general: error.message || 'Erro ao atualizar usuário' });
     } finally {
       setEditLoading(false);
     }
@@ -993,11 +1063,45 @@ export default function Users() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha (opcional)</label>
                       <input
+                        id="password"
                         type="password"
                         placeholder="Deixe em branco para manter a senha atual"
+                        value={editFormData.password || ''}
                         onChange={(e) => handleInputChange('password', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.password ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.password && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.password}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                      <input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Confirme a nova senha"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          // Clear error when user starts typing
+                          if (editErrors.confirmPassword) {
+                            setEditErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.confirmPassword;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {editErrors.confirmPassword && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.confirmPassword}</span>
+                      )}
                     </div>
                   </div>
 
@@ -1100,6 +1204,39 @@ export default function Users() {
                     </div>
 
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Chave PIX</label>
+                      <div className="relative">
+                        <input
+                          id="pixKey"
+                          type="text"
+                          value={editFormData.pixKey || ''}
+                          onChange={(e) => handleInputChange('pixKey', e.target.value)}
+                          className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            editErrors.pixKey ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Sua chave PIX"
+                        />
+                        {editFormData.pixKey && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToClipboard(editFormData.pixKey || '', 'pixKey')}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar chave PIX"
+                          >
+                            {copiedField === 'pixKey' ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {editErrors.pixKey && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.pixKey}</span>
+                      )}
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Titular</label>
                       <input
                         type="text"
@@ -1146,12 +1283,35 @@ export default function Users() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Bitcoin</label>
-                      <input
-                        type="text"
-                        value={editFormData.btcAddress || ''}
-                        onChange={(e) => handleInputChange('btcAddress', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="relative">
+                        <input
+                          id="btcAddress"
+                          type="text"
+                          value={editFormData.btcAddress || ''}
+                          onChange={(e) => handleInputChange('btcAddress', e.target.value)}
+                          className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            editErrors.btcAddress ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Endereço Bitcoin"
+                        />
+                        {editFormData.btcAddress && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToClipboard(editFormData.btcAddress || '', 'btcAddress')}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar endereço Bitcoin"
+                          >
+                            {copiedField === 'btcAddress' ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {editErrors.btcAddress && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.btcAddress}</span>
+                      )}
                     </div>
 
                     <div>
@@ -1186,12 +1346,35 @@ export default function Users() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Endereço USDT</label>
-                      <input
-                        type="text"
-                        value={editFormData.usdtAddress || ''}
-                        onChange={(e) => handleInputChange('usdtAddress', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="relative">
+                        <input
+                          id="usdtAddress"
+                          type="text"
+                          value={editFormData.usdtAddress || ''}
+                          onChange={(e) => handleInputChange('usdtAddress', e.target.value)}
+                          className={`w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            editErrors.usdtAddress ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Endereço USDT"
+                        />
+                        {editFormData.usdtAddress && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToClipboard(editFormData.usdtAddress || '', 'usdtAddress')}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar endereço USDT"
+                          >
+                            {copiedField === 'usdtAddress' ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {editErrors.usdtAddress && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.usdtAddress}</span>
+                      )}
                     </div>
 
                     <div>
@@ -1225,103 +1408,7 @@ export default function Users() {
                     </div>
                   </div>
 
-                  {/* Account Settings */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações da Conta</h3>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
-                      <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600">
-                        {editFormData.role?.toUpperCase() || 'USER'}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">A função do usuário não pode ser alterada</p>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                      <select
-                        value={editFormData.status || ''}
-                        onChange={(e) => handleInputChange('status', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="pending">Pendente</option>
-                        <option value="active">Ativo</option>
-                        <option value="suspended">Suspenso</option>
-                        <option value="blocked">Bloqueado</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={editFormData.emailVerified || false}
-                          onChange={(e) => handleInputChange('emailVerified', e.target.checked)}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Email Verificado</span>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={editFormData.phoneVerified || false}
-                          onChange={(e) => handleInputChange('phoneVerified', e.target.checked)}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Telefone Verificado</span>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={editFormData.adminApproved || false}
-                          onChange={(e) => handleInputChange('adminApproved', e.target.checked)}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Aprovado pelo Admin</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Avatar Upload */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Avatar</h3>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Foto do Perfil</label>
-                      <div className="flex items-center space-x-4">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('avatar', file);
-                          }}
-                          className="hidden"
-                          id="avatar-upload"
-                        />
-                        <label
-                          htmlFor="avatar-upload"
-                          className="flex items-center px-3 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 cursor-pointer"
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Avatar
-                        </label>
-                        {editFormData.avatar && (
-                          <img
-                            src={editFormData.avatar.startsWith('data:') ? editFormData.avatar : `data:image/png;base64,${editFormData.avatar}`}
-                            alt="Avatar"
-                            className="w-16 h-16 border border-gray-300 rounded-full object-cover"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
