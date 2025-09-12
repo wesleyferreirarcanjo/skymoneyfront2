@@ -321,7 +321,7 @@ export default function Queue() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-gray-800 mr-3">Slots de Participantes</h2>
-              {totalEntries >= 100 && (
+              {allQueueEntries.length >= 100 && (
                 <div className="flex items-center text-red-600">
                   <AlertCircle className="h-5 w-5 mr-1" />
                   <span className="text-sm font-medium">Todos os slots estão ocupados</span>
@@ -329,7 +329,7 @@ export default function Queue() {
               )}
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">{totalEntries}</div>
+              <div className="text-3xl font-bold text-gray-900">{allQueueEntries.length}</div>
               <div className="text-sm text-gray-600">Participantes</div>
             </div>
           </div>
@@ -340,10 +340,10 @@ export default function Queue() {
               <div className="flex items-center space-x-4">
                 <div>
                   <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
-                  <span className="ml-2 text-lg font-bold text-gray-900">{totalEntries}/100</span>
+                  <span className="ml-2 text-lg font-bold text-gray-900">{allQueueEntries.length}/100</span>
                 </div>
                 <div className="text-sm text-gray-600">
-                  {((totalEntries / 100) * 100).toFixed(1)}% ocupado
+                  {((allQueueEntries.length / 100) * 100).toFixed(1)}% ocupado
                 </div>
               </div>
             </div>
@@ -357,20 +357,20 @@ export default function Queue() {
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
                   className={`h-3 rounded-full transition-all duration-300 ${
-                    totalEntries >= 100 
+                    allQueueEntries.length >= 100 
                       ? 'bg-red-500' 
-                      : totalEntries >= 80 
+                      : allQueueEntries.length >= 80 
                         ? 'bg-yellow-500' 
                         : 'bg-green-500'
                   }`}
-                  style={{ width: `${Math.min((totalEntries / 100) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((allQueueEntries.length / 100) * 100, 100)}%` }}
                 ></div>
               </div>
             </div>
 
 
             {/* Alert Message */}
-            {totalEntries >= 100 && (
+            {allQueueEntries.length >= 100 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
