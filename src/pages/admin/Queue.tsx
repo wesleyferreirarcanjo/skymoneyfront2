@@ -183,9 +183,9 @@ export default function Queue() {
       setAddLoading(true);
       
       
-      // Check if position already exists
+      // Check if position already exists with a valid user
       const existingEntry = allQueueEntries.find(entry => entry.position === position);
-      if (existingEntry) {
+      if (existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '') {
         alert(`Erro: A posição ${position} já está ocupada por ${existingEntry.user?.firstName || 'um usuário'}.`);
         setAddLoading(false);
         return;
@@ -904,6 +904,7 @@ export default function Queue() {
                   const existingEntry = allQueueEntries.find(entry => entry.position === position);
                   const isOccupied = existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '';
                   const isReceiver = existingEntry && existingEntry.is_receiver;
+                  const hasNullUser = existingEntry && (existingEntry.user_id === null || existingEntry.user_id === '');
                   
                   if (isOccupied) {
                     return (
@@ -929,6 +930,7 @@ export default function Queue() {
                       </div>
                     );
                   } else {
+                    // This handles both empty positions and positions with null/empty user_id
                     return (
                       <button
                         key={position}
@@ -952,7 +954,7 @@ export default function Queue() {
                           {position}
                         </div>
                         <div className="text-xs text-green-600 mt-1">
-                          DISPONÍVEL
+                          {hasNullUser ? 'VAGA VAZIA' : 'DISPONÍVEL'}
                         </div>
                       </button>
                     );
