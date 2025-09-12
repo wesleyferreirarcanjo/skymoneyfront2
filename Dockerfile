@@ -31,8 +31,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 ARG API_BACKEND_URL
 ENV API_BACKEND_URL=${API_BACKEND_URL:-https://api.skymoney.com}
 
-# Substituir a URL da API no nginx.conf
-RUN sed -i "s|SUA_URL_EXTERNA_AQUI|$API_BACKEND_URL|g" /etc/nginx/nginx.conf
+# Substituir a URL da API no nginx.conf (garantir que termine com /)
+RUN sed -i "s|SUA_URL_EXTERNA_AQUI|${API_BACKEND_URL%/}/|g" /etc/nginx/nginx.conf
 
 # Expor porta 80
 EXPOSE 80

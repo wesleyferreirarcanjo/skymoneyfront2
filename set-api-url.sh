@@ -18,11 +18,14 @@ API_URL=$1
 
 echo "🔧 Configurando API: $API_URL"
 
+# Limpar a URL (remover barras finais)
+CLEAN_URL="${API_URL%/}"
+
 # Substituir no docker-compose.yml
-sed -i.bak "s|API_BACKEND_URL: https://.*|API_BACKEND_URL: $API_URL|g" docker-compose.yml
+sed -i.bak "s|API_BACKEND_URL: https://.*|API_BACKEND_URL: $CLEAN_URL|g" docker-compose.yml
 
 # Substituir no nginx.conf
-sed -i.bak "s|SUA_URL_EXTERNA_AQUI|$API_URL|g" nginx.conf
+sed -i.bak "s|SUA_URL_EXTERNA_AQUI|$CLEAN_URL|g" nginx.conf
 
 echo "✅ Configuração atualizada!"
 echo ""

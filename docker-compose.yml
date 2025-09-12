@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # Frontend React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 🔧 CONFIGURAÇÃO DA API EXTERNA
+        API_BACKEND_URL: https://sky-money-ai-skymoneyback2.dq4298.easypanel.host
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+      # ✅ RECOMENDADO: Usar nginx proxy
+      - REACT_APP_API_URL=/api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
