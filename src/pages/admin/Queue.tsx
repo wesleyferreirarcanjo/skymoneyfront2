@@ -163,8 +163,97 @@ export default function Queue() {
     setSelectedEntry(null);
   };
 
-  const handleAddToQueue = () => {
-    setIsAddModalOpen(true);
+  const handleAddToQueue = async () => {
+    try {
+      setAddLoading(true);
+      
+      // Get users not in queue, sorted by createdAt (oldest first - order of arrival)
+      const usersInQueue = allQueueEntries
+        .filter(entry => entry.user_id !== null && entry.user_id !== '')
+        .map(entry => entry.user_id);
+      
+      const waitingUsers = allApprovedUsers
+        .filter(user => !usersInQueue.includes(user.id))
+        .sort((a, b) => {
+          // Sort by createdAt date (oldest first - order of arrival)
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateA.getTime() - dateB.getTime();
+        });
+      
+      if (waitingUsers.length === 0) {
+        alert('Não há usuários aprovados aguardando para entrar na fila.');
+        return;
+      }
+      
+      // Get available positions (free slots)
+      const occupiedPositions = allQueueEntries
+        .filter(entry => entry.user_id !== null && entry.user_id !== '')
+        .map(entry => entry.position);
+      
+      const availablePositions = [];
+      for (let i = 1; i <= MAX_QUEUE_SLOTS; i++) {
+        if (!occupiedPositions.includes(i)) {
+          availablePositions.push(i);
+        }
+      }
+      
+      if (availablePositions.length === 0) {
+        alert('Não há vagas disponíveis na fila.');
+        return;
+      }
+      
+      // Allocate users to available positions in order
+      const usersToAllocate = Math.min(waitingUsers.length, availablePositions.length);
+      let successCount = 0;
+      
+      for (let i = 0; i < usersToAllocate; i++) {
+        try {
+          const user = waitingUsers[i];
+          const position = availablePositions[i];
+          
+          const newEntry: CreateQueueEntryRequest = {
+            position: position,
+            donation_number: 1,
+            user_id: user.id,
+            is_receiver: false,
+            passed_user_ids: []
+          };
+          
+          await queueAPI.addToQueue(newEntry);
+          successCount++;
+          
+          // Small delay to avoid overwhelming the server
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (error: any) {
+          console.error(`Error adding user ${waitingUsers[i].firstName} to position ${availablePositions[i]}:`, error);
+          
+          // Stop operation on first error
+          if (successCount === 0) {
+            alert(`Erro ao adicionar usuário à fila: ${error.message || 'Erro desconhecido'}`);
+          } else {
+            alert(`Operação interrompida. ${successCount} usuário(s) adicionado(s) com sucesso. Erro ao adicionar o próximo usuário: ${error.message || 'Erro desconhecido'}`);
+          }
+          break;
+        }
+      }
+      
+      if (successCount > 0) {
+        // Refresh the queue data
+        await fetchQueueEntries();
+        
+        if (successCount === usersToAllocate) {
+          alert(`${successCount} usuário(s) adicionado(s) à fila com sucesso!`);
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('Error in handleAddToQueue:', error);
+      alert(`Erro ao processar adição à fila: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   const closeAddModal = () => {
@@ -351,10 +440,20 @@ export default function Queue() {
             <div className="flex space-x-3">
               <button
                 onClick={handleAddToQueue}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                disabled={addLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar à Fila
+                {addLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adicionando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar por ordem de chegada
+                  </>
+                )}
               </button>
               <button
                 onClick={fetchQueueEntries}
@@ -591,7 +690,7 @@ export default function Queue() {
                       onClick={handleAddToQueue}
                       className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
                     >
-                      Adicionar primeira entrada
+                      Adicionar por ordem de chegada
                     </button>
                   ) : null}
                 </div>
