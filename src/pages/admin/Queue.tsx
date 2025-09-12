@@ -273,9 +273,9 @@ export default function Queue() {
     return waitingUsers.length;
   };
 
-  // Calculate occupied slots (entries with user_id)
+  // Calculate occupied slots (entries with user_id that is not null and not empty)
   const getOccupiedSlotsCount = () => {
-    return allQueueEntries.filter(entry => entry.user_id !== null).length;
+    return allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length;
   };
 
   // Calculate available slots (total slots minus occupied slots)
@@ -327,8 +327,8 @@ export default function Queue() {
     totalSlots: getTotalSlotsCount(),
     maxSlots: MAX_QUEUE_SLOTS,
     userFilter,
-    queueEntriesWithNull: allQueueEntries.filter(entry => entry.user_id === null).length,
-    queueEntriesWithUser: allQueueEntries.filter(entry => entry.user_id !== null).length
+    queueEntriesWithNull: allQueueEntries.filter(entry => entry.user_id === null || entry.user_id === '').length,
+    queueEntriesWithUser: allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length
   });
 
   return (
@@ -344,7 +344,7 @@ export default function Queue() {
               <strong>Slot Debug:</strong> Occupied: {getOccupiedSlotsCount()}, Available: {getAvailableSlotsCount()}, Total: {getTotalSlotsCount()}, Max: {MAX_QUEUE_SLOTS}
             </p>
             <p className="text-sm text-yellow-800 mt-1">
-              <strong>Filter Debug:</strong> Current Filter: {userFilter}, Entries with null user_id: {allQueueEntries.filter(entry => entry.user_id === null).length}, Entries with user_id: {allQueueEntries.filter(entry => entry.user_id !== null).length}
+              <strong>Filter Debug:</strong> Current Filter: {userFilter}, Entries with null/empty user_id: {allQueueEntries.filter(entry => entry.user_id === null || entry.user_id === '').length}, Entries with user_id: {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
             </p>
           </div>
         )}
@@ -902,7 +902,7 @@ export default function Queue() {
                 {Array.from({ length: MAX_QUEUE_SLOTS }, (_, index) => {
                   const position = index + 1;
                   const existingEntry = allQueueEntries.find(entry => entry.position === position);
-                  const isOccupied = existingEntry && existingEntry.user_id !== null;
+                  const isOccupied = existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '';
                   const isReceiver = existingEntry && existingEntry.is_receiver;
                   
                   if (isOccupied) {
@@ -935,7 +935,7 @@ export default function Queue() {
                         onClick={() => {
                           // Find the first available user (not in queue)
                           const usersInQueue = allQueueEntries
-                            .filter(entry => entry.user_id !== null)
+                            .filter(entry => entry.user_id !== null && entry.user_id !== '')
                             .map(entry => entry.user_id);
                           const availableUser = allApprovedUsers.find(user => !usersInQueue.includes(user.id));
                           
