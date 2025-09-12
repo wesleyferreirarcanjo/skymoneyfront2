@@ -60,6 +60,12 @@ function UserRoute({ children }: { children: React.ReactNode }) {
 function RoleBasedRedirect() {
   const { user, isLoading } = useAuth();
 
+  // Debug logging
+  console.log('🔍 RoleBasedRedirect - User:', user);
+  console.log('🔍 RoleBasedRedirect - User role:', user?.role);
+  console.log('🔍 RoleBasedRedirect - User role lowercase:', user?.role?.toLowerCase());
+  console.log('🔍 RoleBasedRedirect - Is admin?', user?.role?.toLowerCase() === 'admin');
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -76,9 +82,11 @@ function RoleBasedRedirect() {
   }
 
   if (user.role?.toLowerCase() === 'admin') {
+    console.log('✅ Redirecting to admin dashboard');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
+  console.log('➡️ Redirecting to home');
   return <Navigate to="/home" replace />;
 }
 

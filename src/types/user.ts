@@ -22,7 +22,7 @@ export interface User {
   usdtAddress?: string;
   usdtQrCode?: string;
   avatar?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'USER' | 'ADMIN';
   emailVerified: boolean;
   phoneVerified: boolean;
   status: UserStatus;
