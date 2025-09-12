@@ -32,6 +32,10 @@ export default function Queue() {
     errorMessage?: string;
     successMessage?: string;
   } | null>(null);
+  const [isBulkRemoveModalOpen, setIsBulkRemoveModalOpen] = useState(false);
+  const [isBulkConfirmModalOpen, setIsBulkConfirmModalOpen] = useState(false);
+  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [bulkRemoveLoading, setBulkRemoveLoading] = useState(false);
 
   useEffect(() => {
     fetchQueueEntries();
@@ -391,6 +395,99 @@ export default function Queue() {
     setAllocationResults(null);
   };
 
+  const closeBulkRemoveModal = () => {
+    setIsBulkRemoveModalOpen(false);
+    setSelectedEntries([]);
+  };
+
+  const closeBulkConfirmModal = () => {
+    setIsBulkConfirmModalOpen(false);
+  };
+
+  const handleBulkRemoveConfirm = async () => {
+    try {
+      setBulkRemoveLoading(true);
+      setIsBulkConfirmModalOpen(false);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+      
+      for (const entryId of selectedEntries) {
+        try {
+          await queueAPI.removeFromQueue(entryId);
+          successCount++;
+          
+          // Small delay to avoid overwhelming the server
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error: any) {
+          errorCount++;
+          const entry = allQueueEntries.find(e => e.id === entryId);
+          const userName = entry?.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Usuário desconhecido';
+          errors.push(`${userName}: ${error.message || 'Erro desconhecido'}`);
+        }
+      }
+      
+      // Refresh the queue data
+      await fetchQueueEntries();
+      
+      // Show results
+      if (errorCount === 0) {
+        setAllocationResults({
+          successCount,
+          totalAttempted: selectedEntries.length,
+          successMessage: `${successCount} usuário(s) removido(s) da fila com sucesso!`
+        });
+      } else if (successCount > 0) {
+        setAllocationResults({
+          successCount,
+          totalAttempted: selectedEntries.length,
+          errorMessage: `Operação parcialmente concluída. ${successCount} usuário(s) removido(s) com sucesso. Erros: ${errors.join('; ')}`
+        });
+      } else {
+        setAllocationResults({
+          successCount: 0,
+          totalAttempted: selectedEntries.length,
+          errorMessage: `Erro ao remover usuários: ${errors.join('; ')}`
+        });
+      }
+      
+      setIsResultsModalOpen(true);
+      closeBulkRemoveModal();
+      
+    } catch (error: any) {
+      console.error('Error in bulk remove:', error);
+      setAllocationResults({
+        successCount: 0,
+        totalAttempted: selectedEntries.length,
+        errorMessage: `Erro ao processar remoção em massa: ${error.message || 'Erro desconhecido'}`
+      });
+      setIsResultsModalOpen(true);
+    } finally {
+      setBulkRemoveLoading(false);
+    }
+  };
+
+  const handleEntrySelection = (entryId: string) => {
+    setSelectedEntries(prev => 
+      prev.includes(entryId) 
+        ? prev.filter(id => id !== entryId)
+        : [...prev, entryId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const occupiedEntries = allQueueEntries
+      .filter(entry => entry.user_id !== null && entry.user_id !== '')
+      .map(entry => entry.id);
+    
+    if (selectedEntries.length === occupiedEntries.length) {
+      setSelectedEntries([]);
+    } else {
+      setSelectedEntries(occupiedEntries);
+    }
+  };
+
   // Calculate users waiting to join the queue
   const getWaitingUsersCount = () => {
     const usersInQueue = allQueueEntries
@@ -483,6 +580,23 @@ export default function Queue() {
               <p className="text-gray-600">Gerenciar fila de doações e receptores</p>
             </div>
             <div className="flex space-x-3">
+              <button
+                onClick={() => setIsBulkRemoveModalOpen(true)}
+                disabled={bulkRemoveLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bulkRemoveLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Removendo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Retirar em Massa
+                  </>
+                )}
+              </button>
               <button
                 onClick={handleAddToQueue}
                 disabled={addLoading}
@@ -1349,6 +1463,250 @@ export default function Queue() {
                 className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {actionLoading === entryToDelete.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Removendo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Confirmar Remoção
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Remove Modal */}
+      {isBulkRemoveModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeBulkRemoveModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Retirar em Massa
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Selecione os usuários que deseja remover da fila
+                </p>
+              </div>
+              <button
+                onClick={closeBulkRemoveModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Select All Button */}
+              <div className="mb-4">
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedEntries.length > 0 && selectedEntries.length === allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    onChange={handleSelectAll}
+                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  Selecionar Todos ({allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length} usuários)
+                </button>
+              </div>
+
+              {/* Queue Entries List */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {allQueueEntries
+                  .filter(entry => entry.user_id !== null && entry.user_id !== '')
+                  .map((entry) => (
+                    <div
+                      key={entry.id}
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        selectedEntries.includes(entry.id)
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                      onClick={() => handleEntrySelection(entry.id)}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedEntries.includes(entry.id)}
+                          onChange={() => handleEntrySelection(entry.id)}
+                          className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                        />
+                        
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                            <User className="h-5 w-5 text-gray-600" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                              {entry.user?.firstName} {entry.user?.lastName}
+                            </h4>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              entry.is_receiver 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {entry.is_receiver ? (
+                                <>
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  RECEPTOR
+                                </>
+                              ) : (
+                                <>
+                                  <Target className="h-3 w-3 mr-1" />
+                                  ATIVO
+                                </>
+                              )}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              Posição {entry.position}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-1 text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                              <span className="truncate">{entry.user?.email}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                              <span>Adicionado em {formatDate(entry.created_at)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length === 0 && (
+                <div className="text-center py-8">
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
+                    Nenhum usuário na fila
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Não há usuários ocupando posições na fila no momento.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-600">
+                {selectedEntries.length > 0 && (
+                  <span>{selectedEntries.length} usuário(s) selecionado(s)</span>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeBulkRemoveModal}
+                  disabled={bulkRemoveLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setIsBulkConfirmModalOpen(true)}
+                  disabled={selectedEntries.length === 0 || bulkRemoveLoading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover Selecionados ({selectedEntries.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Remove Confirmation Modal */}
+      {isBulkConfirmModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeBulkConfirmModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Confirmar Remoção em Massa
+              </h2>
+              <button
+                onClick={closeBulkConfirmModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Remover {selectedEntries.length} usuário(s)
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Esta ação não pode ser desfeita
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 mb-6">
+                Tem certeza que deseja remover {selectedEntries.length} usuário(s) da fila? Esta ação não pode ser desfeita.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Atenção:</p>
+                    <p>Se algum dos usuários selecionados for o receptor ativo, a fila será reorganizada automaticamente.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeBulkConfirmModal}
+                disabled={bulkRemoveLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkRemoveConfirm}
+                disabled={bulkRemoveLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {bulkRemoveLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Removendo...
