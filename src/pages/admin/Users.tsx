@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -15,6 +15,10 @@ export default function Users() {
   const [showUnverifiedOnly, setShowUnverifiedOnly] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserType | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<UserType>>({});
+  const [editLoading, setEditLoading] = useState(false);
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -126,9 +130,69 @@ export default function Users() {
   };
 
   const handleEditUser = (userId: string) => {
-    // TODO: Implement edit user functionality
-    console.log('Editing user:', userId);
-    // Could open a modal or navigate to edit page
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+      setEditingUser(user);
+      setEditFormData({ ...user });
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingUser(null);
+    setEditFormData({});
+  };
+
+  const handleInputChange = (field: keyof UserType, value: any) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleFileUpload = (field: 'avatar' | 'pixQrCode' | 'btcQrCode' | 'usdtQrCode', file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      // Remove data:image/png;base64, prefix if present
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      handleInputChange(field, base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      setEditLoading(true);
+      
+      // Prepare the update data
+      const updateData = {
+        ...editFormData,
+        // Remove fields that shouldn't be updated
+        id: editingUser.id,
+        createdAt: editingUser.createdAt,
+        updatedAt: new Date().toISOString()
+      };
+
+      // TODO: Implement API call
+      // await authAPI.updateUser(editingUser.id, updateData);
+      console.log('Updating user:', editingUser.id, updateData);
+      
+      // Update local state
+      const updatedUsers = allUsers.map(user => 
+        user.id === editingUser.id ? { ...user, ...updateData } : user
+      );
+      setAllUsers(updatedUsers);
+      
+      closeEditModal();
+    } catch (error) {
+      console.error('Error updating user:', error);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleViewProfile = (userId: string) => {
@@ -752,6 +816,465 @@ export default function Users() {
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Editar Usuário
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit User Modal */}
+        {isEditModalOpen && editingUser && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={closeEditModal}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Editar Usuário
+                </h2>
+                <button
+                  onClick={closeEditModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                      <input
+                        type="text"
+                        value={editFormData.firstName || ''}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome</label>
+                      <input
+                        type="text"
+                        value={editFormData.lastName || ''}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={editFormData.email || ''}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                      <input
+                        type="tel"
+                        value={editFormData.phone || ''}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                      <input
+                        type="text"
+                        value={editFormData.cpf || ''}
+                        onChange={(e) => handleInputChange('cpf', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                      <input
+                        type="date"
+                        value={editFormData.birthDate ? editFormData.birthDate.split('T')[0] : ''}
+                        onChange={(e) => handleInputChange('birthDate', e.target.value + 'T00:00:00.000Z')}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nova Senha (opcional)</label>
+                      <input
+                        type="password"
+                        placeholder="Deixe em branco para manter a senha atual"
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Endereço</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                      <input
+                        type="text"
+                        value={editFormData.address || ''}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                      <input
+                        type="text"
+                        value={editFormData.addressNumber || ''}
+                        onChange={(e) => handleInputChange('addressNumber', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                      <input
+                        type="text"
+                        value={editFormData.cep || ''}
+                        onChange={(e) => handleInputChange('cep', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Banking Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Bancárias</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Banco</label>
+                      <input
+                        type="text"
+                        value={editFormData.bank || ''}
+                        onChange={(e) => handleInputChange('bank', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Agência</label>
+                      <input
+                        type="text"
+                        value={editFormData.agency || ''}
+                        onChange={(e) => handleInputChange('agency', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Conta</label>
+                      <input
+                        type="text"
+                        value={editFormData.account || ''}
+                        onChange={(e) => handleInputChange('account', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* PIX Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">PIX</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Chave PIX</label>
+                      <input
+                        type="text"
+                        value={editFormData.pixKey || ''}
+                        onChange={(e) => handleInputChange('pixKey', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Chave</label>
+                      <select
+                        value={editFormData.pixKeyType || ''}
+                        onChange={(e) => handleInputChange('pixKeyType', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="email">Email</option>
+                        <option value="cpf">CPF</option>
+                        <option value="phone">Telefone</option>
+                        <option value="random">Chave Aleatória</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Titular</label>
+                      <input
+                        type="text"
+                        value={editFormData.pixOwnerName || ''}
+                        onChange={(e) => handleInputChange('pixOwnerName', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">QR Code PIX</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('pixQrCode', file);
+                          }}
+                          className="hidden"
+                          id="pix-qr-upload"
+                        />
+                        <label
+                          htmlFor="pix-qr-upload"
+                          className="flex items-center px-3 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload QR Code
+                        </label>
+                        {editFormData.pixQrCode && (
+                          <img
+                            src={`data:image/png;base64,${editFormData.pixQrCode}`}
+                            alt="PIX QR Code"
+                            className="w-16 h-16 border border-gray-300 rounded"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Crypto Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Criptomoedas</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Bitcoin</label>
+                      <input
+                        type="text"
+                        value={editFormData.btcAddress || ''}
+                        onChange={(e) => handleInputChange('btcAddress', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">QR Code Bitcoin</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('btcQrCode', file);
+                          }}
+                          className="hidden"
+                          id="btc-qr-upload"
+                        />
+                        <label
+                          htmlFor="btc-qr-upload"
+                          className="flex items-center px-3 py-2 bg-orange-100 text-orange-800 rounded-md hover:bg-orange-200 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload QR Code
+                        </label>
+                        {editFormData.btcQrCode && (
+                          <img
+                            src={`data:image/png;base64,${editFormData.btcQrCode}`}
+                            alt="Bitcoin QR Code"
+                            className="w-16 h-16 border border-gray-300 rounded"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Endereço USDT</label>
+                      <input
+                        type="text"
+                        value={editFormData.usdtAddress || ''}
+                        onChange={(e) => handleInputChange('usdtAddress', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">QR Code USDT</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('usdtQrCode', file);
+                          }}
+                          className="hidden"
+                          id="usdt-qr-upload"
+                        />
+                        <label
+                          htmlFor="usdt-qr-upload"
+                          className="flex items-center px-3 py-2 bg-green-100 text-green-800 rounded-md hover:bg-green-200 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload QR Code
+                        </label>
+                        {editFormData.usdtQrCode && (
+                          <img
+                            src={`data:image/png;base64,${editFormData.usdtQrCode}`}
+                            alt="USDT QR Code"
+                            className="w-16 h-16 border border-gray-300 rounded"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações da Conta</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
+                      <select
+                        value={editFormData.role || ''}
+                        onChange={(e) => handleInputChange('role', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={editFormData.status || ''}
+                        onChange={(e) => handleInputChange('status', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="pending">Pendente</option>
+                        <option value="active">Ativo</option>
+                        <option value="suspended">Suspenso</option>
+                        <option value="blocked">Bloqueado</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.emailVerified || false}
+                          onChange={(e) => handleInputChange('emailVerified', e.target.checked)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Email Verificado</span>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.phoneVerified || false}
+                          onChange={(e) => handleInputChange('phoneVerified', e.target.checked)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Telefone Verificado</span>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.adminApproved || false}
+                          onChange={(e) => handleInputChange('adminApproved', e.target.checked)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm font-medium text-gray-700">Aprovado pelo Admin</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Avatar Upload */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Avatar</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Foto do Perfil</label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('avatar', file);
+                          }}
+                          className="hidden"
+                          id="avatar-upload"
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="flex items-center px-3 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Avatar
+                        </label>
+                        {editFormData.avatar && (
+                          <img
+                            src={editFormData.avatar.startsWith('data:') ? editFormData.avatar : `data:image/png;base64,${editFormData.avatar}`}
+                            alt="Avatar"
+                            className="w-16 h-16 border border-gray-300 rounded-full object-cover"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={closeEditModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveUser}
+                  disabled={editLoading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {editLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar Alterações
+                    </>
+                  )}
                 </button>
               </div>
             </div>
