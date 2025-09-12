@@ -191,6 +191,8 @@ export default function Queue() {
     try {
       setAddLoading(true);
       
+      console.log('🔍 Debug confirmAddToQueue:', { position, userId, selectedUserId });
+      
       const newEntry: CreateQueueEntryRequest = {
         position: position,
         donation_number: 0,
@@ -198,6 +200,8 @@ export default function Queue() {
         is_receiver: false,
         passed_user_ids: []
       };
+
+      console.log('📤 Sending to API:', newEntry);
 
       await queueAPI.addToQueue(newEntry);
       await fetchQueueEntries();
@@ -911,8 +915,10 @@ export default function Queue() {
                       <button
                         key={position}
                         onClick={() => {
+                          console.log('🔍 Available slot clicked:', position);
                           setSelectedPosition(position);
                           setShowUserSelection(true);
+                          console.log('🔍 User selection should be shown now');
                         }}
                         disabled={addLoading}
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 hover:bg-green-200 hover:border-green-400 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -942,7 +948,10 @@ export default function Queue() {
                       </label>
                       <select
                         value={selectedUserId}
-                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        onChange={(e) => {
+                          console.log('🔍 User selection changed:', e.target.value);
+                          setSelectedUserId(e.target.value);
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Selecione um usuário</option>
@@ -970,8 +979,12 @@ export default function Queue() {
                       </button>
                       <button
                         onClick={() => {
+                          console.log('🔍 Button click debug:', { selectedUserId, selectedPosition });
                           if (selectedUserId) {
                             confirmAddToQueue(selectedPosition, selectedUserId);
+                          } else {
+                            console.error('❌ No user selected!');
+                            alert('Por favor, selecione um usuário primeiro.');
                           }
                         }}
                         disabled={!selectedUserId || addLoading}
