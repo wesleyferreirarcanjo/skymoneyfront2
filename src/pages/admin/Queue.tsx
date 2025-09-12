@@ -116,7 +116,8 @@ export default function Queue() {
     
     // Apply user filter
     if (userFilter === 'in-queue') {
-      allItems = [...queueItems, ...emptySlots];
+      // Show only occupied queue entries (users actually in the queue)
+      allItems = queueItems;
     } else if (userFilter === 'waiting') {
       allItems = waitingItems;
     }
@@ -306,7 +307,10 @@ export default function Queue() {
     occupiedSlots: getOccupiedSlotsCount(),
     availableSlots: getAvailableSlotsCount(),
     totalSlots: getTotalSlotsCount(),
-    maxSlots: MAX_QUEUE_SLOTS
+    maxSlots: MAX_QUEUE_SLOTS,
+    userFilter,
+    queueEntriesWithNull: allQueueEntries.filter(entry => entry.user_id === null).length,
+    queueEntriesWithUser: allQueueEntries.filter(entry => entry.user_id !== null).length
   });
 
   return (
@@ -320,6 +324,9 @@ export default function Queue() {
             </p>
             <p className="text-sm text-yellow-800 mt-2">
               <strong>Slot Debug:</strong> Occupied: {getOccupiedSlotsCount()}, Available: {getAvailableSlotsCount()}, Total: {getTotalSlotsCount()}, Max: {MAX_QUEUE_SLOTS}
+            </p>
+            <p className="text-sm text-yellow-800 mt-1">
+              <strong>Filter Debug:</strong> Current Filter: {userFilter}, Entries with null user_id: {allQueueEntries.filter(entry => entry.user_id === null).length}, Entries with user_id: {allQueueEntries.filter(entry => entry.user_id !== null).length}
             </p>
           </div>
         )}
