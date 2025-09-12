@@ -25,6 +25,13 @@ export default function Queue() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<QueueEntry | null>(null);
   const [userFilter, setUserFilter] = useState<'all' | 'in-queue' | 'waiting'>('all');
+  const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
+  const [allocationResults, setAllocationResults] = useState<{
+    successCount: number;
+    totalAttempted: number;
+    errorMessage?: string;
+    successMessage?: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchQueueEntries();
@@ -182,7 +189,12 @@ export default function Queue() {
         });
       
       if (waitingUsers.length === 0) {
-        alert('Não há usuários aprovados aguardando para entrar na fila.');
+        setAllocationResults({
+          successCount: 0,
+          totalAttempted: 0,
+          errorMessage: 'Não há usuários aprovados aguardando para entrar na fila.'
+        });
+        setIsResultsModalOpen(true);
         return;
       }
       
@@ -199,7 +211,12 @@ export default function Queue() {
       }
       
       if (availablePositions.length === 0) {
-        alert('Não há vagas disponíveis na fila.');
+        setAllocationResults({
+          successCount: 0,
+          totalAttempted: 0,
+          errorMessage: 'Não há vagas disponíveis na fila.'
+        });
+        setIsResultsModalOpen(true);
         return;
       }
       
@@ -230,11 +247,16 @@ export default function Queue() {
           console.error(`Error adding user ${waitingUsers[i].firstName} to position ${availablePositions[i]}:`, error);
           
           // Stop operation on first error
-          if (successCount === 0) {
-            alert(`Erro ao adicionar usuário à fila: ${error.message || 'Erro desconhecido'}`);
-          } else {
-            alert(`Operação interrompida. ${successCount} usuário(s) adicionado(s) com sucesso. Erro ao adicionar o próximo usuário: ${error.message || 'Erro desconhecido'}`);
-          }
+          const errorMessage = successCount === 0 
+            ? `Erro ao adicionar usuário à fila: ${error.message || 'Erro desconhecido'}`
+            : `Operação interrompida. ${successCount} usuário(s) adicionado(s) com sucesso. Erro ao adicionar o próximo usuário: ${error.message || 'Erro desconhecido'}`;
+          
+          setAllocationResults({
+            successCount,
+            totalAttempted: usersToAllocate,
+            errorMessage
+          });
+          setIsResultsModalOpen(true);
           break;
         }
       }
@@ -242,15 +264,33 @@ export default function Queue() {
       if (successCount > 0) {
         // Refresh the queue data
         await fetchQueueEntries();
-        
-        if (successCount === usersToAllocate) {
-          alert(`${successCount} usuário(s) adicionado(s) à fila com sucesso!`);
-        }
       }
+      
+      // Show results modal
+      if (successCount === usersToAllocate) {
+        setAllocationResults({
+          successCount,
+          totalAttempted: usersToAllocate,
+          successMessage: `${successCount} usuário(s) adicionado(s) à fila com sucesso!`
+        });
+      } else if (successCount > 0) {
+        setAllocationResults({
+          successCount,
+          totalAttempted: usersToAllocate,
+          successMessage: `${successCount} usuário(s) adicionado(s) à fila com sucesso!`
+        });
+      }
+      
+      setIsResultsModalOpen(true);
       
     } catch (error: any) {
       console.error('Error in handleAddToQueue:', error);
-      alert(`Erro ao processar adição à fila: ${error.message || 'Erro desconhecido'}`);
+      setAllocationResults({
+        successCount: 0,
+        totalAttempted: 0,
+        errorMessage: `Erro ao processar adição à fila: ${error.message || 'Erro desconhecido'}`
+      });
+      setIsResultsModalOpen(true);
     } finally {
       setAddLoading(false);
     }
@@ -344,6 +384,11 @@ export default function Queue() {
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setEntryToDelete(null);
+  };
+
+  const closeResultsModal = () => {
+    setIsResultsModalOpen(false);
+    setAllocationResults(null);
   };
 
   // Calculate users waiting to join the queue
@@ -1314,6 +1359,96 @@ export default function Queue() {
                     Confirmar Remoção
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Allocation Results Modal */}
+      {isResultsModalOpen && allocationResults && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeResultsModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Resultado da Alocação
+              </h2>
+              <button
+                onClick={closeResultsModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {allocationResults.errorMessage ? (
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Erro na Operação
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    {allocationResults.errorMessage}
+                  </p>
+                  {allocationResults.successCount > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                      <p className="text-sm text-yellow-700">
+                        <strong>Nota:</strong> {allocationResults.successCount} usuário(s) foram adicionado(s) com sucesso antes do erro.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                    <Crown className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Operação Concluída
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    {allocationResults.successMessage}
+                  </p>
+                  
+                  {/* Statistics */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {allocationResults.successCount}
+                        </div>
+                        <div className="text-sm text-gray-600">Usuários Adicionados</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-600">
+                          {allocationResults.totalAttempted}
+                        </div>
+                        <div className="text-sm text-gray-600">Total Tentativas</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeResultsModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Fechar
               </button>
             </div>
           </div>
