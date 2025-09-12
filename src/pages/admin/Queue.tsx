@@ -16,6 +16,7 @@ export default function Queue() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
+  const [allApprovedUsers, setAllApprovedUsers] = useState<UserType[]>([]);
   const [selectedDonationNumber, setSelectedDonationNumber] = useState<number>(1);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<number>(1);
@@ -26,7 +27,7 @@ export default function Queue() {
 
   useEffect(() => {
     fetchQueueEntries();
-    fetchAvailableUsers();
+    fetchAllApprovedUsers();
   }, []);
 
   useEffect(() => {
@@ -48,9 +49,9 @@ export default function Queue() {
     }
   };
 
-  const fetchAvailableUsers = async () => {
+  const fetchAllApprovedUsers = async () => {
     try {
-      console.log('🔄 Fetching available users...');
+      console.log('🔄 Fetching all approved users...');
       const users = await authAPI.getUsers();
       console.log('✅ Users fetched:', users);
       // Filter only approved users (not admin and adminApproved)
@@ -58,9 +59,11 @@ export default function Queue() {
         user.role.toLowerCase() !== 'admin' && user.adminApproved
       );
       console.log('✅ Approved users:', approvedUsers);
+      setAllApprovedUsers(approvedUsers);
       setAvailableUsers(approvedUsers);
     } catch (error) {
-      console.error('❌ Error fetching available users:', error);
+      console.error('❌ Error fetching approved users:', error);
+      setAllApprovedUsers([]);
       setAvailableUsers([]);
     }
   };
@@ -203,6 +206,14 @@ export default function Queue() {
     setEntryToDelete(null);
   };
 
+  // Calculate users waiting to join the queue
+  const getWaitingUsersCount = () => {
+    const usersInQueue = allQueueEntries.map(entry => entry.user_id);
+    const waitingUsers = allApprovedUsers.filter(user => !usersInQueue.includes(user.id));
+    return waitingUsers.length;
+  };
+
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -233,7 +244,9 @@ export default function Queue() {
   console.log('🎯 Queue component rendering...', { 
     queueEntries: queueEntries.length, 
     loading, 
-    allQueueEntries: allQueueEntries.length 
+    allQueueEntries: allQueueEntries.length,
+    allApprovedUsers: allApprovedUsers.length,
+    waitingUsers: getWaitingUsersCount()
   });
 
   return (
@@ -243,7 +256,7 @@ export default function Queue() {
         {process.env.NODE_ENV === 'development' && (
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
             <p className="text-sm text-yellow-800">
-              <strong>Debug:</strong> Queue component loaded. Entries: {queueEntries.length}, Loading: {loading.toString()}, All Entries: {allQueueEntries.length}
+              <strong>Debug:</strong> Queue component loaded. Entries: {queueEntries.length}, Loading: {loading.toString()}, All Entries: {allQueueEntries.length}, All Users: {allApprovedUsers.length}, Waiting: {getWaitingUsersCount()}
             </p>
           </div>
         )}
@@ -326,17 +339,17 @@ export default function Queue() {
               </div>
             </div>
 
-            {/* Waiting Queue Info */}
-            {totalEntries >= 100 && (
+            {/* Waiting Queue Info - Always show if there are users waiting */}
+            {getWaitingUsersCount() > 0 && (
               <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center">
                   <div className="p-2 rounded-full bg-blue-100 mr-3">
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-medium text-blue-800">Na fila aguardando:</span>
+                  <span className="text-sm font-medium text-blue-800">Na fila de espera:</span>
                 </div>
                 <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
-                  {Math.max(0, totalEntries - 100)} usuários
+                  {getWaitingUsersCount()} usuários
                 </div>
               </div>
             )}
@@ -347,7 +360,7 @@ export default function Queue() {
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                   <p className="text-sm text-red-700">
-                    <strong>Nenhum slot disponível.</strong> {Math.max(0, totalEntries - 100)} usuários aguardando liberação de slots.
+                    <strong>Nenhum slot disponível.</strong> {getWaitingUsersCount()} usuários aguardando liberação de slots.
                   </p>
                 </div>
               </div>
