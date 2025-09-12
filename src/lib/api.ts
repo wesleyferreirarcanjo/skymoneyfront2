@@ -116,7 +116,11 @@ export const authAPI = {
       return await makeAuthenticatedRequest('/auth/profile');
     } catch (error) {
       console.error('Get profile error:', error);
-      throw error;
+      // Retornar erro estruturado em vez de throw
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get profile'
+      };
     }
   },
 

@@ -134,22 +134,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = localStorage.getItem('user');
 
         if (token && userData) {
-          // Verificar se o token ainda é válido fazendo uma requisição para o perfil
           try {
-            const response = await authAPI.getProfile();
-            if (response.success) {
-              // Token válido, atualizar dados do usuário
-              dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data, token } });
-              localStorage.setItem('user', JSON.stringify(response.data));
-            } else {
-              // Token inválido, limpar dados
-              localStorage.removeItem('authToken');
-              localStorage.removeItem('user');
-              dispatch({ type: 'SET_LOADING', payload: false });
-            }
+            const user = JSON.parse(userData);
+            // Primeiro, restaurar o estado com os dados do localStorage
+            dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+            
+            // Depois, tentar validar o token em background (não bloqueia o carregamento)
+            authAPI.getProfile()
+              .then((response: any) => {
+                if (response.success) {
+                  // Token válido, atualizar dados do usuário
+                  dispatch({ type: 'UPDATE_USER', payload: response.data });
+                  localStorage.setItem('user', JSON.stringify(response.data));
+                } else {
+                  // Token inválido, fazer logout
+                  console.warn('Token inválido, fazendo logout');
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('user');
+                  dispatch({ type: 'AUTH_LOGOUT' });
+                }
+              })
+              .catch((error: any) => {
+                console.warn('Erro ao validar token, mantendo sessão local:', error);
+                // Em caso de erro de rede, manter a sessão local
+                // Não limpar os dados do localStorage
+              });
           } catch (error) {
-            console.error('Token validation failed:', error);
-            // Token inválido ou erro de rede, limpar dados
+            console.error('Erro ao parsear dados do usuário:', error);
+            // Dados corrompidos, limpar
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
             dispatch({ type: 'SET_LOADING', payload: false });
@@ -159,9 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
-        // Em caso de erro, limpar dados e parar loading
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        // Em caso de erro crítico, apenas parar loading sem limpar dados
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
