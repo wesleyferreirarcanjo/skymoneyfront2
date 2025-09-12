@@ -22,6 +22,9 @@ export default function Users() {
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [confirmPassword, setConfirmPassword] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [userToVerify, setUserToVerify] = useState<UserType | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -120,16 +123,44 @@ export default function Users() {
     }
   };
 
-  const handleVerifyUser = async (userId: string) => {
-    try {
-      // TODO: Implement API call to verify/unverify user
-      console.log('Verifying user:', userId);
-      // await authAPI.verifyUser(userId);
-      // Refresh users list after verification
-      // fetchUsers();
-    } catch (error) {
-      console.error('Error verifying user:', error);
+  const handleVerifyUser = (userId: string) => {
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+      setUserToVerify(user);
+      setIsConfirmModalOpen(true);
     }
+  };
+
+  const confirmVerifyUser = async () => {
+    if (!userToVerify) return;
+
+    try {
+      setVerifyLoading(true);
+      
+      // Call the PATCH /users/:id/approve endpoint
+      await authAPI.approveUser(userToVerify.id);
+      console.log('User approved successfully:', userToVerify.id);
+      
+      // Update local state
+      const updatedUsers = allUsers.map(user => 
+        user.id === userToVerify.id ? { ...user, adminApproved: true } : user
+      );
+      setAllUsers(updatedUsers);
+      
+      // Close modal
+      setIsConfirmModalOpen(false);
+      setUserToVerify(null);
+    } catch (error: any) {
+      console.error('Error approving user:', error);
+      alert(error.message || 'Erro ao aprovar usuário');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const closeConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setUserToVerify(null);
   };
 
   const handleEditUser = (userId: string) => {
@@ -1455,6 +1486,84 @@ export default function Users() {
                       <Save className="h-4 w-4 mr-2" />
                       Salvar Alterações
                     </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {isConfirmModalOpen && userToVerify && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={closeConfirmModal}
+          >
+            <div 
+              className="bg-white rounded-lg shadow-xl max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Confirmar Aprovação
+                </h2>
+                <button
+                  onClick={closeConfirmModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <div className="flex items-center space-x-4 mb-4">
+                  {userToVerify.avatar ? (
+                    <img
+                      src={userToVerify.avatar}
+                      alt={`${userToVerify.firstName} ${userToVerify.lastName}`}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                      <User className="h-6 w-6 text-gray-600" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {userToVerify.firstName} {userToVerify.lastName}
+                    </h3>
+                    <p className="text-sm text-gray-600">{userToVerify.email}</p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-700 mb-6">
+                  Tem certeza que deseja aprovar este usuário? Esta ação permitirá que o usuário tenha acesso completo ao sistema.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={closeConfirmModal}
+                  disabled={verifyLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmVerifyUser}
+                  disabled={verifyLoading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {verifyLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Aprovando...
+                    </>
+                  ) : (
+                    'Confirmar Aprovação'
                   )}
                 </button>
               </div>

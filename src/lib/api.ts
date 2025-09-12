@@ -215,4 +215,16 @@ export const authAPI = {
       throw error;
     }
   },
+
+  approveUser: async (userId: string): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/users/${userId}/approve`, {
+        method: 'PATCH',
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Approve user error:', error);
+      throw error;
+    }
+  },
 };
