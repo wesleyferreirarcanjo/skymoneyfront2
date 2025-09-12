@@ -4,6 +4,9 @@ import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, Refres
 import { QueueEntry, CreateQueueEntryRequest } from '../../types/queue';
 import { User as UserType } from '../../types/user';
 
+// Maximum number of slots available in the queue
+const MAX_QUEUE_SLOTS = 100;
+
 export default function Queue() {
   const [queueEntries, setQueueEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -261,6 +264,11 @@ export default function Queue() {
     return allQueueEntries.filter(entry => entry.user_id === null).length;
   };
 
+  // Calculate total slots (occupied + available)
+  const getTotalSlotsCount = () => {
+    return Math.max(allQueueEntries.length, MAX_QUEUE_SLOTS);
+  };
+
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -337,10 +345,10 @@ export default function Queue() {
 
         {/* Queue Status Overview */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <h2 className="text-2xl font-bold text-gray-800 mr-3">Slots de Participantes</h2>
-               {getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100 && (
+               {getAvailableSlotsCount() === 0 && getTotalSlotsCount() >= MAX_QUEUE_SLOTS && (
                  <div className="flex items-center text-red-600">
                    <AlertCircle className="h-5 w-5 mr-1" />
                    <span className="text-sm font-medium">Todos os slots estão ocupados</span>
@@ -359,10 +367,10 @@ export default function Queue() {
               <div className="flex items-center space-x-4">
                  <div>
                    <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
-                   <span className="ml-2 text-lg font-bold text-gray-900">{getOccupiedSlotsCount()}/{allQueueEntries.length}</span>
+                   <span className="ml-2 text-lg font-bold text-gray-900">{getOccupiedSlotsCount()}/{getTotalSlotsCount()}</span>
                  </div>
                  <div className="text-sm text-gray-600">
-                   {allQueueEntries.length > 0 ? ((getOccupiedSlotsCount() / allQueueEntries.length) * 100).toFixed(1) : 0}% ocupado
+                   {getTotalSlotsCount() > 0 ? ((getOccupiedSlotsCount() / getTotalSlotsCount()) * 100).toFixed(1) : 0}% ocupado
                  </div>
               </div>
             </div>
@@ -371,30 +379,30 @@ export default function Queue() {
             <div className="w-full">
                <div className="flex justify-between text-xs text-gray-600 mb-1">
                  <span>0 ocupados</span>
-                 <span>{allQueueEntries.length} slots</span>
+                 <span>{getTotalSlotsCount()} slots</span>
                </div>
                <div className="w-full bg-gray-200 rounded-full h-3">
                  <div 
                    className={`h-3 rounded-full transition-all duration-300 ${
-                     getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100
+                     getAvailableSlotsCount() === 0 && getTotalSlotsCount() >= MAX_QUEUE_SLOTS
                        ? 'bg-red-500' 
-                       : (getOccupiedSlotsCount() / allQueueEntries.length) >= 0.8
+                       : (getOccupiedSlotsCount() / getTotalSlotsCount()) >= 0.8
                          ? 'bg-yellow-500' 
                          : 'bg-green-500'
                    }`}
-                   style={{ width: `${allQueueEntries.length > 0 ? (getOccupiedSlotsCount() / allQueueEntries.length) * 100 : 0}%` }}
+                   style={{ width: `${getTotalSlotsCount() > 0 ? (getOccupiedSlotsCount() / getTotalSlotsCount()) * 100 : 0}%` }}
                  ></div>
                </div>
             </div>
 
 
             {/* Alert Message */}
-            {getAvailableSlotsCount() === 0 && allQueueEntries.length >= 100 && (
+            {getAvailableSlotsCount() === 0 && getTotalSlotsCount() >= MAX_QUEUE_SLOTS && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                   <p className="text-sm text-red-700">
-                    <strong>Nenhum slot disponível.</strong> Todos os {allQueueEntries.length} slots estão ocupados.
+                    <strong>Nenhum slot disponível.</strong> Todos os {getTotalSlotsCount()} slots estão ocupados.
                   </p>
                 </div>
               </div>
