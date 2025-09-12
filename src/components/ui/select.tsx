@@ -5,6 +5,8 @@ import { cn } from '../../lib/utils';
 const SelectContext = createContext<{
   value: string;
   onValueChange: (value: string) => void;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 } | null>(null);
 
 export interface SelectProps {
@@ -15,11 +17,12 @@ export interface SelectProps {
 
 export function Select({ children, value, onValueChange }: SelectProps) {
   const [internalValue, setInternalValue] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
   const currentValue = value !== undefined ? value : internalValue;
   const handleValueChange = onValueChange || setInternalValue;
 
   return (
-    <SelectContext.Provider value={{ value: currentValue, onValueChange: handleValueChange }}>
+    <SelectContext.Provider value={{ value: currentValue, onValueChange: handleValueChange, isOpen, setIsOpen }}>
       <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
@@ -30,6 +33,8 @@ export interface SelectTriggerProps extends React.ButtonHTMLAttributes<HTMLButto
 }
 
 export function SelectTrigger({ className, children, ...props }: SelectTriggerProps) {
+  const context = useContext(SelectContext);
+
   return (
     <button
       type="button"
@@ -37,6 +42,7 @@ export function SelectTrigger({ className, children, ...props }: SelectTriggerPr
         'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
+      onClick={() => context?.setIsOpen(!context.isOpen)}
       {...props}
     >
       {children}
@@ -61,15 +67,11 @@ export interface SelectContentProps {
 }
 
 export function SelectContent({ children }: SelectContentProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const context = useContext(SelectContext);
 
   return (
-    <div className="relative">
-      <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
-        <SelectValue placeholder="Selecione uma opção" />
-      </SelectTrigger>
-      {isOpen && (
+    <>
+      {context?.isOpen && (
         <div className="absolute top-full z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
           {React.Children.map(children, (child) =>
             React.isValidElement(child)
@@ -78,7 +80,7 @@ export function SelectContent({ children }: SelectContentProps) {
                     if (context && React.isValidElement(child)) {
                       const value = child.props.value;
                       context.onValueChange(value);
-                      setIsOpen(false);
+                      context.setIsOpen(false);
                     }
                   },
                 })
@@ -86,7 +88,7 @@ export function SelectContent({ children }: SelectContentProps) {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
