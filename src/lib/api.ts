@@ -35,13 +35,24 @@ const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}):
     });
 
     if (!response.ok) {
+      // Try to get error details from response body
+      let errorDetails = '';
+      try {
+        const errorBody = await response.json();
+        errorDetails = errorBody.message || errorBody.error || JSON.stringify(errorBody);
+      } catch (e) {
+        errorDetails = response.statusText;
+      }
+      
       // Create more specific error messages for authentication issues
       if (response.status === 401) {
         throw new Error(`401: Unauthorized - Token may be expired or invalid`);
       } else if (response.status === 403) {
         throw new Error(`403: Forbidden - Access denied`);
+      } else if (response.status === 400) {
+        throw new Error(`400: Bad Request - ${errorDetails}`);
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${errorDetails}`);
       }
     }
 

@@ -193,9 +193,25 @@ export default function Queue() {
       
       console.log('🔍 Debug confirmAddToQueue:', { position, userId, selectedUserId });
       
+      // Check if position already exists
+      const existingEntry = allQueueEntries.find(entry => entry.position === position);
+      if (existingEntry) {
+        alert(`Erro: A posição ${position} já está ocupada por ${existingEntry.user?.firstName || 'um usuário'}.`);
+        setAddLoading(false);
+        return;
+      }
+      
+      // Check if user is already in queue
+      const userInQueue = allQueueEntries.find(entry => entry.user_id === userId);
+      if (userInQueue) {
+        alert(`Erro: O usuário já está na fila na posição ${userInQueue.position}.`);
+        setAddLoading(false);
+        return;
+      }
+      
       const newEntry: CreateQueueEntryRequest = {
         position: position,
-        donation_number: 0,
+        donation_number: 1, // Changed from 0 to 1, as 0 might not be valid
         user_id: userId,
         is_receiver: false,
         passed_user_ids: []
@@ -208,7 +224,21 @@ export default function Queue() {
       closeAddModal();
     } catch (error: any) {
       console.error('Error adding to queue:', error);
-      alert(error.message || 'Erro ao adicionar à fila');
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
+      
+      // Try to get more detailed error information
+      let errorMessage = 'Erro ao adicionar à fila';
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.status === 400) {
+        errorMessage = 'Erro 400: Dados inválidos enviados para o servidor. Verifique se a posição já existe ou se há outros problemas de validação.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setAddLoading(false);
     }
