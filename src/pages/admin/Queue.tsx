@@ -131,12 +131,16 @@ export default function Queue() {
     let allItems = [...queueItems, ...emptySlots, ...waitingItems];
     
     // Apply user filter
+    console.log('🔍 Current userFilter:', userFilter);
     if (userFilter === 'in-queue') {
       // Show only occupied queue entries (users actually in the queue)
       console.log('🔍 Applying in-queue filter, queueItems:', queueItems.length);
       allItems = queueItems;
     } else if (userFilter === 'waiting') {
+      console.log('🔍 Applying waiting filter, waitingItems:', waitingItems.length);
       allItems = waitingItems;
+    } else {
+      console.log('🔍 No filter applied, showing all items:', allItems.length);
     }
     
     console.log('🔍 Final allItems after filter:', allItems.length, allItems.map(item => ({ 
