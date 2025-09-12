@@ -146,6 +146,22 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="/dashboard/users"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/dashboard/settings"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
 
           {/* User Routes */}
           <Route

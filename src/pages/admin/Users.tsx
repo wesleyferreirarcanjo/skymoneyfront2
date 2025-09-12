@@ -168,14 +168,11 @@ export default function Users() {
     try {
       setEditLoading(true);
       
-      // Prepare the update data
-      const updateData = {
-        ...editFormData,
-        // Remove fields that shouldn't be updated
-        id: editingUser.id,
-        createdAt: editingUser.createdAt,
-        updatedAt: new Date().toISOString()
-      };
+      // Prepare the update data - exclude fields that shouldn't be sent to backend
+      const updateData = { ...editFormData };
+      delete updateData.id;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
 
       // Call the PATCH /users/:id endpoint
       await authAPI.updateUser(editingUser.id, updateData);

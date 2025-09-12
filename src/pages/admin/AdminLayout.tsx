@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Users as UsersIcon, BarChart3, Settings, LogOut } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AdminDashboard from './Dashboard';
 import Users from './Users';
 
@@ -8,13 +9,28 @@ type AdminView = 'dashboard' | 'users' | 'settings';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get current view from URL path
+  const getCurrentView = (): AdminView => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'users';
+    if (path.includes('/settings')) return 'settings';
+    return 'dashboard';
+  };
+  
+  const activeView = getCurrentView();
 
   const menuItems = [
-    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3 },
-    { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon },
-    { id: 'settings' as AdminView, label: 'Configurações', icon: Settings },
+    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
+    { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon, path: '/dashboard/users' },
+    { id: 'settings' as AdminView, label: 'Configurações', icon: Settings, path: '/dashboard/settings' },
   ];
+
+  const handleMenuClick = (item: typeof menuItems[0]) => {
+    navigate(item.path);
+  };
 
   const renderActiveView = () => {
     switch (activeView) {
@@ -57,7 +73,7 @@ export default function AdminLayout() {
               {menuItems.map((item) => (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveView(item.id)}
+                    onClick={() => handleMenuClick(item)}
                     className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
                       activeView === item.id
                         ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
