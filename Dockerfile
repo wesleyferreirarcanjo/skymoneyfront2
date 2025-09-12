@@ -6,14 +6,18 @@ FROM node:20-alpine AS builder
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências
+# Copiar arquivos de dependências primeiro (para melhor cache)
 COPY package*.json ./
 
 # Instalar dependências (incluindo devDependencies para o build)
-RUN npm ci
+# Usar --no-cache para evitar problemas de cache do npm
+RUN npm ci --no-cache --only=production=false
 
-# Copiar código fonte
+# Copiar código fonte (após instalar dependências para melhor cache)
 COPY . .
+
+# Limpar cache do npm antes do build
+RUN npm cache clean --force
 
 # Build da aplicação
 RUN npm run build
