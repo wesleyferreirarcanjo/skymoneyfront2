@@ -29,7 +29,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Argumentos de build para configurar a API externa
 ARG API_BACKEND_URL
-ENV API_BACKEND_URL=${API_BACKEND_URL:-https://api.skymoney.com}
+ENV API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skymoneyback2.dq4298.easypanel.host}
 
 # Substituir a URL da API no nginx.conf (garantir que termine com /)
 RUN sed -i "s|SUA_URL_EXTERNA_AQUI|${API_BACKEND_URL%/}/|g" /etc/nginx/nginx.conf
