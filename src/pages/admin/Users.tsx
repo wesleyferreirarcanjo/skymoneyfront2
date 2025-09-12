@@ -14,11 +14,11 @@ export default function Users() {
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   useEffect(() => {
     fetchUsers();
-  }, [currentPage]);
+  }, []);
 
   useEffect(() => {
     filterUsers();
-  }, [searchTerm, allUsers]);
+  }, [searchTerm, allUsers, currentPage]);
 
   // Mock data generator for testing
   const generateMockUsers = (count: number): UserType[] => {
@@ -84,10 +84,8 @@ export default function Users() {
       setLoading(true);
       
       // Generate 1000 mock users only once
-      if (allUsers.length === 0) {
-        const mockUsers = generateMockUsers(1000);
-        setAllUsers(mockUsers);
-      }
+      const mockUsers = generateMockUsers(1000);
+      setAllUsers(mockUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
