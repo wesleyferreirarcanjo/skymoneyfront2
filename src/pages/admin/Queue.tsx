@@ -7,6 +7,11 @@ import { User as UserType } from '../../types/user';
 // Maximum number of slots available in the queue
 const MAX_QUEUE_SLOTS = 100;
 
+// Helper function to format position with 3 digits and leading zeros
+const formatPosition = (position: number): string => {
+  return `#${position.toString().padStart(3, '0')}`;
+};
+
 export default function Queue() {
   const [queueEntries, setQueueEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1045,7 +1050,7 @@ export default function Queue() {
                              <div className="flex items-center space-x-2 mb-2">
                                <h4 className="text-sm font-medium text-gray-900 truncate">
                                  {item.type === 'empty-slot' ? (
-                                   `Vaga Vazia - Posição ${item.entry.position}`
+                                   `Vaga Vazia - Posição ${formatPosition(item.entry.position)}`
                                  ) : (
                                    `${item.user.firstName} ${item.user.lastName}`
                                  )}
@@ -1070,7 +1075,7 @@ export default function Queue() {
                                      )}
                                    </span>
                                   <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                    Posição {item.entry.position}
+                                    Posição {formatPosition(item.entry.position)}
                                   </span>
                                  </>
                                ) : item.type === 'empty-slot' ? (
