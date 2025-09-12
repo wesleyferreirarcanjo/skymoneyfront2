@@ -23,9 +23,12 @@ export default function LoginPage() {
     clearError();
 
     try {
+      console.log('🚀 Attempting login with:', { email, password });
       await login(email, password);
+      console.log('✅ Login successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (error) {
+      console.log('❌ Login failed in component:', error);
       // Error is handled by the auth context
     } finally {
       setIsLoading(false);

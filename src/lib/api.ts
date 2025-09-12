@@ -55,6 +55,19 @@ export const authAPI = {
         throw new Error(result.message || 'Login failed');
       }
 
+      // Adaptar resposta do backend para o formato esperado pelo frontend
+      if (result.access_token && result.user) {
+        return {
+          success: true,
+          data: {
+            user: result.user,
+            accessToken: result.access_token,
+            refreshToken: result.refresh_token
+          }
+        };
+      }
+
+      // Se já estiver no formato correto, retornar como está
       return result;
     } catch (error) {
       console.error('Login error:', error);
@@ -78,6 +91,19 @@ export const authAPI = {
         throw new Error(result.message || 'Registration failed');
       }
 
+      // Adaptar resposta do backend para o formato esperado pelo frontend
+      if (result.access_token && result.user) {
+        return {
+          success: true,
+          data: {
+            user: result.user,
+            accessToken: result.access_token,
+            refreshToken: result.refresh_token
+          }
+        };
+      }
+
+      // Se já estiver no formato correto, retornar como está
       return result;
     } catch (error) {
       console.error('Registration error:', error);

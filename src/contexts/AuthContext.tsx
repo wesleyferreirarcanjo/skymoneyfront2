@@ -164,8 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'AUTH_START' });
       const response = await authAPI.login({ email, password });
 
+      console.log('🔍 Login response:', response);
+
       if (response.success) {
         const { user, accessToken } = response.data;
+
+        console.log('✅ Login successful, storing data:', { user, accessToken });
 
         // Store in localStorage
         localStorage.setItem('authToken', accessToken);
@@ -173,9 +177,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: 'AUTH_SUCCESS', payload: { user, token: accessToken } });
       } else {
+        console.log('❌ Login failed:', response.message);
         throw new Error(response.message || 'Login failed');
       }
     } catch (error: any) {
+      console.log('💥 Login error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       throw error;
