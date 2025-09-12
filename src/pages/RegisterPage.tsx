@@ -435,6 +435,10 @@ export default function RegisterPage() {
       { value: 'random', label: 'Chave Aleatória' }
     ];
 
+    // Debug: verificar valores atuais
+    console.log('Bank value:', formData.bank);
+    console.log('PixKeyType value:', formData.pixKeyType);
+
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-4">
@@ -483,7 +487,7 @@ export default function RegisterPage() {
           
           <div className="space-y-2">
             <Label htmlFor="bank">Banco</Label>
-            <Select onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank || ""}>
+            <Select onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank || undefined}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione seu banco" />
               </SelectTrigger>
@@ -529,7 +533,7 @@ export default function RegisterPage() {
           
           <div className="space-y-2">
             <Label htmlFor="pixKeyType">Tipo da Chave PIX</Label>
-            <Select onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType || ""}>
+            <Select onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType || undefined}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione o tipo da chave" />
               </SelectTrigger>
