@@ -40,6 +40,10 @@ export default function Queue() {
   const [isSwapConfirmModalOpen, setIsSwapConfirmModalOpen] = useState(false);
   const [swapPositions, setSwapPositions] = useState<number[]>([]);
   const [swapLoading, setSwapLoading] = useState(false);
+  const [isMoveToEndModalOpen, setIsMoveToEndModalOpen] = useState(false);
+  const [isMoveToEndConfirmModalOpen, setIsMoveToEndConfirmModalOpen] = useState(false);
+  const [selectedMoveToEndPosition, setSelectedMoveToEndPosition] = useState<number | null>(null);
+  const [moveToEndLoading, setMoveToEndLoading] = useState(false);
 
   useEffect(() => {
     fetchQueueEntries();
@@ -504,6 +508,67 @@ export default function Queue() {
     setIsSwapConfirmModalOpen(false);
   };
 
+  const closeMoveToEndModal = () => {
+    setIsMoveToEndModalOpen(false);
+    setSelectedMoveToEndPosition(null);
+  };
+
+  const closeMoveToEndConfirmModal = () => {
+    setIsMoveToEndConfirmModalOpen(false);
+  };
+
+  const handleMoveToEndPositionSelection = (position: number) => {
+    const entry = allQueueEntries.find(e => e.position === position);
+    
+    // Only allow selection of occupied positions
+    if (!entry || entry.user_id === null || entry.user_id === '') {
+      return;
+    }
+
+    setSelectedMoveToEndPosition(position);
+  };
+
+  const handleMoveToEndConfirm = async () => {
+    if (!selectedMoveToEndPosition) return;
+
+    try {
+      setMoveToEndLoading(true);
+      setIsMoveToEndConfirmModalOpen(false);
+      
+      const entry = allQueueEntries.find(e => e.position === selectedMoveToEndPosition);
+      
+      if (!entry || !entry.user_id) {
+        throw new Error('Entrada não encontrada ou inválida');
+      }
+
+      // Call the move to end API
+      await queueAPI.moveUserToEnd(entry.user_id, entry.donation_number);
+
+      // Refresh the queue data
+      await fetchQueueEntries();
+      
+      // Show success message
+      setAllocationResults({
+        successCount: 1,
+        totalAttempted: 1,
+        successMessage: `Usuário ${entry.user?.firstName} movido para o fim da fila com sucesso!`
+      });
+      setIsResultsModalOpen(true);
+      closeMoveToEndModal();
+      
+    } catch (error: any) {
+      console.error('Error in move to end:', error);
+      setAllocationResults({
+        successCount: 0,
+        totalAttempted: 1,
+        errorMessage: `Erro ao mover usuário para o fim: ${error.message || 'Erro desconhecido'}`
+      });
+      setIsResultsModalOpen(true);
+    } finally {
+      setMoveToEndLoading(false);
+    }
+  };
+
   const handleSwapPositionSelection = (position: number) => {
     const entry = allQueueEntries.find(e => e.position === position);
     
@@ -656,6 +721,23 @@ export default function Queue() {
               <p className="text-gray-600">Gerenciar fila de doações e receptores</p>
             </div>
             <div className="flex space-x-3">
+              <button
+                onClick={() => setIsMoveToEndModalOpen(true)}
+                disabled={moveToEndLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {moveToEndLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Movendo...
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                    Para o Fim
+                  </>
+                )}
+              </button>
               <button
                 onClick={() => setIsBulkRemoveModalOpen(true)}
                 disabled={bulkRemoveLoading}
@@ -1572,6 +1654,201 @@ export default function Queue() {
         </div>
       )}
 
+      {/* Move to End Modal */}
+      {isMoveToEndModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeMoveToEndModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Mover para o Fim
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Selecione uma posição ocupada para mover o usuário para o fim da fila
+                </p>
+              </div>
+              <button
+                onClick={closeMoveToEndModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-6 mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Selecionada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Ocupada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Receptor Ativo</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Vazia</span>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Instruções:</p>
+                    <p>Clique em uma posição ocupada para mover o usuário para o fim da fila. Todos os outros usuários se moverão uma posição para frente.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selection Status */}
+              {selectedMoveToEndPosition && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="text-sm text-yellow-700">
+                    <span className="font-medium">Posição selecionada:</span>
+                    <div className="mt-1">
+                      {(() => {
+                        const entry = allQueueEntries.find(e => e.position === selectedMoveToEndPosition);
+                        return (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Posição {selectedMoveToEndPosition} - {entry?.user?.firstName} {entry?.user?.lastName}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Slots Grid */}
+              <div className="grid grid-cols-10 gap-2 max-h-96 overflow-y-auto">
+                {Array.from({ length: MAX_QUEUE_SLOTS }, (_, index) => {
+                  const position = index + 1;
+                  const existingEntry = allQueueEntries.find(entry => entry.position === position);
+                  const isOccupied = existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '';
+                  const isReceiver = existingEntry && existingEntry.is_receiver;
+                  const isSelected = selectedMoveToEndPosition === position;
+                  
+                  if (isOccupied) {
+                    return (
+                      <button
+                        key={position}
+                        onClick={() => handleMoveToEndPositionSelection(position)}
+                        className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                          isSelected
+                            ? 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200'
+                            : isReceiver 
+                              ? 'bg-blue-100 border-blue-300 hover:bg-blue-200' 
+                              : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-gray-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
+                        </div>
+                        {existingEntry.user && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {existingEntry.user.firstName}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="text-xs text-yellow-600 mt-1 font-bold">
+                            SELECIONADA
+                          </div>
+                        )}
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={position}
+                        className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
+                      >
+                        <div className="text-xs font-bold text-green-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          VAZIA
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+
+              {/* Summary */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {selectedMoveToEndPosition ? '1' : '0'}
+                    </div>
+                    <div className="text-sm text-gray-600">Posição Selecionada</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-600">
+                      {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Ocupadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {MAX_QUEUE_SLOTS - allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Vazias</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-600">
+                {!selectedMoveToEndPosition && (
+                  <span>Selecione uma posição para mover para o fim</span>
+                )}
+                {selectedMoveToEndPosition && (
+                  <span>Pronto para mover para o fim da fila</span>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeMoveToEndModal}
+                  disabled={moveToEndLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setIsMoveToEndConfirmModalOpen(true)}
+                  disabled={!selectedMoveToEndPosition || moveToEndLoading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4 mr-2" />
+                  Mover para o Fim
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Swap Positions Modal */}
       {isSwapModalOpen && (
         <div 
@@ -2205,6 +2482,139 @@ export default function Queue() {
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Confirmar Troca
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move to End Confirmation Modal */}
+      {isMoveToEndConfirmModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeMoveToEndConfirmModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Confirmar Movimento para o Fim
+              </h2>
+              <button
+                onClick={closeMoveToEndConfirmModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <ChevronRight className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Mover para o Fim
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Esta ação reorganizará a fila
+                  </p>
+                </div>
+              </div>
+              
+              {selectedMoveToEndPosition && (
+                <div className="mb-6">
+                  {(() => {
+                    const entry = allQueueEntries.find(e => e.position === selectedMoveToEndPosition);
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">Usuário a ser movido:</h4>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <User className="h-5 w-5 text-gray-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {entry?.user?.firstName} {entry?.user?.lastName}
+                              </p>
+                              <p className="text-xs text-gray-500">{entry?.user?.email}</p>
+                              <div className="mt-1 flex items-center space-x-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Posição {selectedMoveToEndPosition}
+                                </span>
+                                {entry?.is_receiver && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <Crown className="h-3 w-3 mr-1" />
+                                    Receptor
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <ChevronRight className="h-4 w-4 text-yellow-600 mr-2" />
+                            <div className="text-sm text-yellow-700">
+                              <p className="font-medium">Ação:</p>
+                              <p>Este usuário será movido para o fim da fila e todos os outros usuários se moverão uma posição para frente.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              
+              <p className="text-gray-700 mb-6">
+                Tem certeza que deseja mover este usuário para o fim da fila? Esta ação reorganizará todas as posições.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Atenção:</p>
+                    <p>Se este usuário for o receptor ativo, a fila será reorganizada automaticamente.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeMoveToEndConfirmModal}
+                disabled={moveToEndLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleMoveToEndConfirm}
+                disabled={moveToEndLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {moveToEndLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Movendo...
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                    Confirmar Movimento
                   </>
                 )}
               </button>

@@ -340,4 +340,21 @@ export const queueAPI = {
       throw error;
     }
   },
+
+  // Move user to end of queue
+  moveUserToEnd: async (userId: string, donationNumber: number): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest('/queue/godown/move-user-to-end', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          donation_number: donationNumber
+        }),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Move user to end error:', error);
+      throw error;
+    }
+  },
 };
