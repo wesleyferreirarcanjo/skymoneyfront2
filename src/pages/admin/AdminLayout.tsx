@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Users as UsersIcon, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Users as UsersIcon, BarChart3, Settings, LogOut, Clock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AdminDashboard from './Dashboard';
 import Users from './Users';
+import Queue from './Queue';
 
-type AdminView = 'dashboard' | 'users' | 'settings';
+type AdminView = 'dashboard' | 'users' | 'queue' | 'settings';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
@@ -16,6 +16,7 @@ export default function AdminLayout() {
   const getCurrentView = (): AdminView => {
     const path = location.pathname;
     if (path.includes('/admin/users')) return 'users';
+    if (path.includes('/admin/queue')) return 'queue';
     if (path.includes('/admin/settings')) return 'settings';
     return 'dashboard';
   };
@@ -24,6 +25,7 @@ export default function AdminLayout() {
 
   const menuItems = [
     { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3, path: '/admin/dashboard' },
+    { id: 'queue' as AdminView, label: 'Fila', icon: Clock, path: '/admin/queue' },
     { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon, path: '/admin/users' },
     { id: 'settings' as AdminView, label: 'Configurações', icon: Settings, path: '/admin/settings' },
   ];
@@ -36,6 +38,8 @@ export default function AdminLayout() {
     switch (activeView) {
       case 'dashboard':
         return <AdminDashboard />;
+      case 'queue':
+        return <Queue />;
       case 'users':
         return <Users />;
       case 'settings':
