@@ -541,7 +541,7 @@ export default function Queue() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           firstUserId: firstEntry.user_id,
