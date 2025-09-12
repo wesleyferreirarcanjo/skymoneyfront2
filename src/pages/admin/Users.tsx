@@ -1,19 +1,34 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [usersPerPage] = useState(10);
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [currentPage]);
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
+      // TODO: Update API to support pagination
+      // const response = await authAPI.getUsers({ page: currentPage, limit: usersPerPage });
       const allUsers = await authAPI.getUsers();
-      setUsers(allUsers || []);
+      
+      // For now, simulate pagination on frontend
+      const startIndex = (currentPage - 1) * usersPerPage;
+      const endIndex = startIndex + usersPerPage;
+      const paginatedUsers = allUsers?.slice(startIndex, endIndex) || [];
+      
+      setUsers(paginatedUsers);
+      setTotalUsers(allUsers?.length || 0);
+      setTotalPages(Math.ceil((allUsers?.length || 0) / usersPerPage));
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -69,6 +84,32 @@ export default function Users() {
     // Could open a modal or navigate to edit page
   };
 
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
+
   return (
     <div className="ml-64 p-8">
         <div className="max-w-7xl mx-auto">
@@ -82,9 +123,17 @@ export default function Users() {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Lista de Usuários ({users.length})
-                </h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Lista de Usuários
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Mostrando {((currentPage - 1) * usersPerPage) + 1} a {Math.min(currentPage * usersPerPage, totalUsers)} de {totalUsers} usuários
+                  </p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Página {currentPage} de {totalPages}
+                </div>
               </div>
             </div>
 
@@ -191,6 +240,53 @@ export default function Users() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1" />
+                      Anterior
+                    </button>
+                    
+                    <div className="flex space-x-1">
+                      {getPageNumbers().map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-2 text-sm font-medium rounded-md ${
+                            page === currentPage
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Próximo
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </button>
+                  </div>
+                  
+                  <div className="text-sm text-gray-700">
+                    {usersPerPage} usuários por página
+                  </div>
+                </div>
               </div>
             )}
           </div>
