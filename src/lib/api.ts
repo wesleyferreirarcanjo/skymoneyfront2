@@ -128,7 +128,7 @@ export const authAPI = {
 
   getProfile: async (): Promise<AuthResponse> => {
     try {
-      const result = await makeAuthenticatedRequest('/auth/profile');
+      const result = await makeAuthenticatedRequest('/users/profile');
       return {
         success: true,
         data: result
