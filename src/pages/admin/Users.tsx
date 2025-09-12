@@ -12,13 +12,14 @@ export default function Users() {
   const [usersPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const [showUnverifiedOnly, setShowUnverifiedOnly] = useState(false);
   useEffect(() => {
     fetchUsers();
   }, []);
 
   useEffect(() => {
     filterUsers();
-  }, [searchTerm, allUsers, currentPage]);
+  }, [searchTerm, allUsers, currentPage, showUnverifiedOnly]);
 
   // Mock data generator for testing
   const generateMockUsers = (count: number): UserType[] => {
@@ -98,13 +99,21 @@ export default function Users() {
 
     let filteredUsers = allUsers;
 
+    // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filteredUsers = allUsers.filter(user => 
+      filteredUsers = filteredUsers.filter(user => 
         user.firstName.toLowerCase().includes(searchLower) ||
         user.lastName.toLowerCase().includes(searchLower) ||
         user.email.toLowerCase().includes(searchLower) ||
         user.phone.includes(searchTerm)
+      );
+    }
+
+    // Apply unverified filter
+    if (showUnverifiedOnly) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.role.toLowerCase() !== 'admin' && !user.adminApproved
       );
     }
 
@@ -126,6 +135,11 @@ export default function Users() {
   const clearSearch = () => {
     setSearchTerm('');
     setCurrentPage(1);
+  };
+
+  const toggleUnverifiedFilter = () => {
+    setShowUnverifiedOnly(!showUnverifiedOnly);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const formatDate = (dateString: string) => {
@@ -217,31 +231,76 @@ export default function Users() {
             <p className="text-gray-600">Gerenciar todos os usuários do sistema</p>
           </div>
 
-          {/* Search Bar */}
+          {/* Search Bar and Filters */}
           <div className="bg-white rounded-lg shadow-md mb-6">
             <div className="p-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Buscar por nome, email ou telefone..."
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-                {searchTerm && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <button
-                      onClick={clearSearch}
-                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Search Input */}
+                <div className="flex-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
                   </div>
-                )}
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Buscar por nome, email ou telefone..."
+                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {searchTerm && (
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <button
+                        onClick={clearSearch}
+                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Filter Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={toggleUnverifiedFilter}
+                    className={`px-4 py-3 text-sm font-medium rounded-lg border transition-colors ${
+                      showUnverifiedOnly
+                        ? 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
+                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {showUnverifiedOnly ? 'Mostrar Todos' : 'Não Verificados'}
+                  </button>
+                </div>
               </div>
+              
+              {/* Active Filters Display */}
+              {(searchTerm || showUnverifiedOnly) && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {searchTerm && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Busca: "{searchTerm}"
+                      <button
+                        onClick={clearSearch}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {showUnverifiedOnly && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Apenas não verificados
+                      <button
+                        onClick={toggleUnverifiedFilter}
+                        className="ml-2 text-red-600 hover:text-red-800"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
