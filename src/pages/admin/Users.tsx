@@ -51,6 +51,24 @@ export default function Users() {
     }
   };
 
+  const handleVerifyUser = async (userId: string) => {
+    try {
+      // TODO: Implement API call to verify/unverify user
+      console.log('Verifying user:', userId);
+      // await authAPI.verifyUser(userId);
+      // Refresh users list after verification
+      // fetchUsers();
+    } catch (error) {
+      console.error('Error verifying user:', error);
+    }
+  };
+
+  const handleEditUser = (userId: string) => {
+    // TODO: Implement edit user functionality
+    console.log('Editing user:', userId);
+    // Could open a modal or navigate to edit page
+  };
+
   return (
     <div className="ml-64 p-8">
         <div className="max-w-7xl mx-auto">
@@ -97,6 +115,9 @@ export default function Users() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Cadastrado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
                       </th>
                     </tr>
                   </thead>
@@ -166,6 +187,28 @@ export default function Users() {
                               <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                               {formatDate(userData.createdAt)}
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            {userData.role.toLowerCase() !== 'admin' && (
+                              <button
+                                onClick={() => handleVerifyUser(userData.id)}
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                  userData.adminApproved
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                    : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                }`}
+                              >
+                                {userData.adminApproved ? 'Desverificar' : 'Verificar'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleEditUser(userData.id)}
+                              className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+                            >
+                              Editar
+                            </button>
                           </div>
                         </td>
                       </tr>
