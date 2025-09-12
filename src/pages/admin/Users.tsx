@@ -633,7 +633,6 @@ export default function Users() {
                                       : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                                   }`}
                                 >
-                                  {userData.adminApproved ? 'Desverificar' : 'Verificar'}
                                 </button>
                               )}
                               <button
