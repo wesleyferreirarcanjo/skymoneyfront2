@@ -244,11 +244,6 @@ export default function Users() {
                   </div>
                 )}
               </div>
-              {searchTerm && (
-                <p className="mt-2 text-sm text-gray-600">
-                  {totalUsers} resultado{totalUsers !== 1 ? 's' : ''} encontrado{totalUsers !== 1 ? 's' : ''} para "{searchTerm}"
-                </p>
-              )}
             </div>
           </div>
 
@@ -261,10 +256,15 @@ export default function Users() {
                     Lista de Usuários
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    {totalUsers > 0 
-                      ? `Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)} de ${totalUsers} usuários`
-                      : 'Nenhum usuário para exibir'
-                    }
+                    {searchTerm ? (
+                      totalUsers > 0 
+                        ? `${totalUsers} resultado${totalUsers !== 1 ? 's' : ''} encontrado${totalUsers !== 1 ? 's' : ''} para "${searchTerm}" - Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)}`
+                        : `Nenhum resultado encontrado para "${searchTerm}"`
+                    ) : (
+                      totalUsers > 0 
+                        ? `Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)} de ${totalUsers} usuários`
+                        : 'Nenhum usuário para exibir'
+                    )}
                   </p>
                 </div>
                 {totalPages > 0 && (
