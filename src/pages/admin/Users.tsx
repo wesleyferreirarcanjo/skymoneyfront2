@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
+import { formatDate } from '../../lib/dateUtils';
 import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
+import { formatDate } from '../../lib/dateUtils';
 import { User, Mail, Phone, MapPin, Calendar, Edit3, Save, X, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
@@ -315,7 +316,7 @@ export default function Profile() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="text-gray-900">{profileData?.birthDate || 'Não informado'}</p>
+                      <p className="text-gray-900">{formatDate(profileData?.birthDate || '')}</p>
                     )}
                   </div>
 
