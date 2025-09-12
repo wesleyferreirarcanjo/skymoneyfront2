@@ -21,6 +21,8 @@ export default function Queue() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [allApprovedUsers, setAllApprovedUsers] = useState<UserType[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<number>(1);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [showUserSelection, setShowUserSelection] = useState<boolean>(false);
   const [addLoading, setAddLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -181,16 +183,18 @@ export default function Queue() {
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setSelectedPosition(1);
+    setSelectedUserId('');
+    setShowUserSelection(false);
   };
 
-  const confirmAddToQueue = async () => {
+  const confirmAddToQueue = async (position: number, userId: string) => {
     try {
       setAddLoading(true);
       
       const newEntry: CreateQueueEntryRequest = {
-        position: selectedPosition,
+        position: position,
         donation_number: 0,
-        user_id: null, // Empty slot
+        user_id: userId,
         is_receiver: false,
         passed_user_ids: []
       };
@@ -908,7 +912,7 @@ export default function Queue() {
                         key={position}
                         onClick={() => {
                           setSelectedPosition(position);
-                          confirmAddToQueue();
+                          setShowUserSelection(true);
                         }}
                         disabled={addLoading}
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 hover:bg-green-200 hover:border-green-400 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -924,6 +928,61 @@ export default function Queue() {
                   }
                 })}
               </div>
+
+              {/* User Selection */}
+              {showUserSelection && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Adicionar Usuário à Posição {selectedPosition}
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Selecione um usuário
+                      </label>
+                      <select
+                        value={selectedUserId}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Selecione um usuário</option>
+                        {allApprovedUsers
+                          .filter(user => {
+                            // Filter out users already in queue
+                            const usersInQueue = allQueueEntries
+                              .filter(entry => entry.user_id !== null)
+                              .map(entry => entry.user_id);
+                            return !usersInQueue.includes(user.id);
+                          })
+                          .map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.firstName} {user.lastName} ({user.email})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setShowUserSelection(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (selectedUserId) {
+                            confirmAddToQueue(selectedPosition, selectedUserId);
+                          }
+                        }}
+                        disabled={!selectedUserId || addLoading}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {addLoading ? 'Adicionando...' : 'Adicionar à Fila'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Summary */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
