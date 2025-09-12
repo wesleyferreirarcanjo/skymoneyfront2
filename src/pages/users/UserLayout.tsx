@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, LogOut } from 'lucide-react';
+import { authAPI } from '../../lib/api';
+import { User, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Profile from './Profile';
+import { User as UserType } from '../../types/user';
 
 type UserView = 'home' | 'profile';
 
@@ -10,6 +12,35 @@ export default function UserLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [profileData, setProfileData] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  // Access control: redirect non-approved users to home if they try to access restricted routes
+  useEffect(() => {
+    if (profileData && !profileData.adminApproved) {
+      const currentPath = location.pathname;
+      // Only allow access to /home and /profile for non-approved users
+      if (currentPath !== '/home' && currentPath !== '/profile') {
+        navigate('/home');
+      }
+    }
+  }, [profileData, location.pathname, navigate]);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const userData = await authAPI.getProfile();
+      setProfileData(userData);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Get current view from URL path
   const getCurrentView = (): UserView => {
@@ -41,14 +72,52 @@ export default function UserLayout() {
                 <p className="text-gray-600">Bem-vindo ao SkyMoney</p>
               </div>
 
-              {/* Main Content Area - Blank for now */}
+              {/* Verification Status */}
+              <div className="mb-8">
+                <div className={`rounded-lg p-6 ${
+                  profileData?.adminApproved 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-yellow-50 border border-yellow-200'
+                }`}>
+                  <div className="flex items-center">
+                    {profileData?.adminApproved ? (
+                      <CheckCircle className="w-8 h-8 text-green-600 mr-4" />
+                    ) : (
+                      <AlertTriangle className="w-8 h-8 text-yellow-600 mr-4" />
+                    )}
+                    <div>
+                      <h3 className={`text-lg font-semibold ${
+                        profileData?.adminApproved ? 'text-green-800' : 'text-yellow-800'
+                      }`}>
+                        {profileData?.adminApproved ? 'Conta Verificada' : 'Não Verificado'}
+                      </h3>
+                      <p className={`text-sm ${
+                        profileData?.adminApproved ? 'text-green-700' : 'text-yellow-700'
+                      }`}>
+                        {profileData?.adminApproved 
+                          ? 'Sua conta foi aprovada pelo administrador. Você tem acesso completo ao sistema.'
+                          : 'Sua conta está aguardando aprovação do administrador. Você tem acesso limitado ao sistema.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Content Area */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="text-center py-12">
                   <h2 className="text-xl font-semibold text-gray-600 mb-4">
-                    Conteúdo em desenvolvimento
+                    {profileData?.adminApproved 
+                      ? 'Conteúdo em desenvolvimento' 
+                      : 'Acesso Limitado'
+                    }
                   </h2>
                   <p className="text-gray-500">
-                    Em breve, novas funcionalidades estarão disponíveis aqui.
+                    {profileData?.adminApproved 
+                      ? 'Em breve, novas funcionalidades estarão disponíveis aqui.'
+                      : 'Aguarde a aprovação do administrador para acessar todas as funcionalidades.'
+                    }
                   </p>
                 </div>
               </div>
@@ -70,6 +139,17 @@ export default function UserLayout() {
         );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
