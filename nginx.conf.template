@@ -113,6 +113,9 @@ http {
         # API routes - proxy para backend externo
         # IMPORTANTE: URL será substituída em runtime via variável de ambiente
         location /api/ {
+            # Remover /api do path antes de redirecionar
+            rewrite ^/api/(.*)$ /$1 break;
+            
             # URL será substituída em runtime
             proxy_pass ${API_BACKEND_URL};
 
