@@ -17,7 +17,14 @@ const isUserAdmin = (user: User | null): boolean => {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
 
+  console.log('🛡️ ===== ADMIN ROUTE CHECK =====');
+  console.log('🔍 AdminRoute - Current URL:', window.location.pathname);
+  console.log('🔍 AdminRoute - User:', user);
+  console.log('🔍 AdminRoute - Is admin:', isUserAdmin(user));
+  console.log('🔍 AdminRoute - Is loading:', isLoading);
+
   if (isLoading) {
+    console.log('⏳ AdminRoute: Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -29,21 +36,32 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    console.log('❌ AdminRoute: No user, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
   if (!isUserAdmin(user)) {
-    console.log('❌ User is not admin, redirecting to home');
+    console.log('🚫 AdminRoute: User is NOT admin, redirecting to /home');
+    console.log('🛡️ ===== ADMIN ROUTE CHECK END (REDIRECT) =====');
     return <Navigate to="/home" replace />;
   }
 
+  console.log('✅ AdminRoute: User is admin, allowing access to dashboard');
+  console.log('🛡️ ===== ADMIN ROUTE CHECK END (ALLOW) =====');
   return <>{children}</>;
 }
 
 function UserRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
 
+  console.log('🏠 ===== USER ROUTE CHECK =====');
+  console.log('🔍 UserRoute - Current URL:', window.location.pathname);
+  console.log('🔍 UserRoute - User:', user);
+  console.log('🔍 UserRoute - Is admin:', isUserAdmin(user));
+  console.log('🔍 UserRoute - Is loading:', isLoading);
+
   if (isLoading) {
+    console.log('⏳ UserRoute: Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -55,27 +73,36 @@ function UserRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    console.log('❌ UserRoute: No user, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
   if (isUserAdmin(user)) {
-    console.log('❌ User is admin, redirecting to admin dashboard');
-    return <Navigate to="/admin/dashboard" replace />;
+    console.log('🔄 UserRoute: User is admin, redirecting to /dashboard');
+    console.log('🏠 ===== USER ROUTE CHECK END (REDIRECT) =====');
+    return <Navigate to="/dashboard" replace />;
   }
 
+  console.log('✅ UserRoute: User is regular user, allowing access to home');
+  console.log('🏠 ===== USER ROUTE CHECK END (ALLOW) =====');
   return <>{children}</>;
 }
 
 function RoleBasedRedirect() {
   const { user, isLoading } = useAuth();
 
-  // Debug logging
+  // Enhanced debug logging with distinct markers
+  console.log('🚀 ===== ROLE-BASED REDIRECT START =====');
+  console.log('🔍 RoleBasedRedirect - Current URL:', window.location.pathname);
   console.log('🔍 RoleBasedRedirect - User:', user);
   console.log('🔍 RoleBasedRedirect - User role:', user?.role);
   console.log('🔍 RoleBasedRedirect - User role lowercase:', user?.role?.toLowerCase());
-  console.log('🔍 RoleBasedRedirect - Is admin?', user?.role?.toLowerCase() === 'admin');
+  console.log('🔍 RoleBasedRedirect - User email:', user?.email);
+  console.log('🔍 RoleBasedRedirect - Is admin check:', isUserAdmin(user));
+  console.log('🔍 RoleBasedRedirect - Is loading:', isLoading);
 
   if (isLoading) {
+    console.log('⏳ RoleBasedRedirect: Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -87,16 +114,18 @@ function RoleBasedRedirect() {
   }
 
   if (!user) {
-    console.log('❌ No user, redirecting to login');
+    console.log('❌ RoleBasedRedirect: No user found, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
   if (isUserAdmin(user)) {
-    console.log('✅ User is admin, redirecting to admin dashboard');
-    return <Navigate to="/admin/dashboard" replace />;
+    console.log('🎯 RoleBasedRedirect: ✅ ADMIN USER - Redirecting to /dashboard');
+    console.log('🚀 ===== ROLE-BASED REDIRECT END (ADMIN) =====');
+    return <Navigate to="/dashboard" replace />;
   }
 
-  console.log('➡️ User is regular user, redirecting to home');
+  console.log('🏠 RoleBasedRedirect: ✅ REGULAR USER - Redirecting to /home');
+  console.log('🚀 ===== ROLE-BASED REDIRECT END (USER) =====');
   return <Navigate to="/home" replace />;
 }
 
@@ -110,7 +139,7 @@ function App() {
 
           {/* Admin Routes */}
           <Route
-            path="/admin/dashboard"
+            path="/dashboard"
             element={
               <AdminRoute>
                 <AdminDashboard />

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
-import { User, authAPI } from '../lib/api';
+import { authAPI } from '../lib/api';
+import { User } from '../types/user';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
