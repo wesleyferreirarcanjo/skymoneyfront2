@@ -65,11 +65,11 @@ export default function Users() {
         pixKeyType: 'email',
         pixOwnerName: `${firstName} ${lastName}`,
         pixCopyPaste: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@example.com`,
-        pixQrCode: `data:image/png;base64,mock-qr-code-${index + 1}`,
+        pixQrCode: `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`,
         btcAddress: `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa${index}`,
-        btcQrCode: `data:image/png;base64,mock-btc-qr-${index + 1}`,
+        btcQrCode: `iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAAAklEQVR4AewaftIAAA3pSURBVO3BAW4kwZEEwYgE//9lv4UeUHPKQqOHlJuVfyJJ0n9pIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGnhJ1+gbf46ICdt8zQgJ21zAuRW25wAOWmbEyAnbfM0ICdt8+2A3GibEyBPa5u/DsibJpIkLUwkSVqYSJK0MJEkaWEiSdLCRJKkhYkkSQsTSZIWJpIkLfzkFwByq21OgJy0zQmQk7Y5AfIJkCe1zQmQbwfkRtt8OyDfDsjTgNxomxMgN9rmr5tIkrQwkSRpYSJJ0sJEkqSFiSRJCxNJkhYmkiQtTCRJWvjJF2ibG0De1jZvA/KmtvkEyDdrm0+AnLTNCZAbQG61zQmQk7Y5AaK/byJJ0sJEkqSFiSRJCxNJkhYmkiQtTCRJWphIkrRQ/smXa5sTIJ+0zQ0gN9rmaUButM0JkFttcwPISdu8DciT2uYWkCe1zQ0gt9rmBMiNtrkF5DebSJK0MJEkaWEiSdLCRJKkhYkkSQsTSZIWJpIkLfzkC7TNCZBbQJ7UNidATtrmEyA32uYEyI22uQXkpG1OgJy0zQkQfdY2J0ButM0nQE6A3GibEyBPa5sTIG+aSJK0MJEkaWEiSdLCRJKkhYkkSQsTSZIWJpIkLfzkCwD5dm1zAuS3a5sbQD5pmxtAvl3b3ADytLa5AeRtbXMDyAmQG23zCZATIN9sIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStPCTX6Bt3gbkpG1OgJwA+aRtngTkpG3e1jY3gJy0zSdAbgA5aZtv1za/XdvcAHIC5K+bSJK0MJEkaWEiSdLCRJKkhYkkSQsTSZIWJpIkLUwkSVr4yS8A5NsBudE2t4CctM2T2uYTICdt8yYgn7TNCZCTtjkBctI2J0A+aZsTIE9qm1tAntQ2N9rmaUDeNJEkaWEiSdLCRJKkhYkkSQsTSZIWJpIkLUwkSVr4yRdom78OyNPa5gTIDSAnbfNJ29wActI2N9rmEyA3gLwNyI22OQHytrY5AfI2ICdt880mkiQtTCRJWphIkrQwkSRpYSJJ0sJEkqSFiSRJCz/5BYB8u7Z5GpA3tc0JkKe1zQmQk7Z5W9vcAHKrbW4AOWmbtwF5UtucAPnrJpIkLUwkSVqYSJK0MJEkaWEiSdLCRJKkhYkkSQs/+QPa5mlAngTkVtv8dUBuALnVNidAToA8qW1uAfl2bfPN2uYTICdAvtlEkqSFiSRJCxNJkhYmkiQtTCRJWphIkrQwkSRp4Sf6Cm3zCZATICdtcwPISdt8AuSkbW4AudE2nwA5aZtvB+S3A3KjbU6AnLTN/7qJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwk+k/6e2eRqQk7Z5EpCnATlpmxMgT2ubEyAnQE7a5gTIJ21zA8gNIE9rmxMgb5pIkrQwkSRpYSJJ0sJEkqSFiSRJCxNJkhYmkiQtTCRJWvjJHwDktwPySducADkBcqNtToA8DchJ25wAOWmbW0BO2uYEyI22+QTICZCTtvl2QE7a5gaQpwH5ZhNJkhYmkiQtTCRJWphIkrQwkSRpYSJJ0sJEkqSFn/wCbfPXtc0nQE7a5gTIk9rmEyAnbXMC5H9d25wAeRqQJ7XNrbY5AaI7E0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIXyTyRJ+i9NJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFiaSJC1MJElamEiStDCRJGlhIknSwkSSpIWJJEkLE0mSFv4Pax3KITGz/A8AAAAASUVORK5CYII=`,
         usdtAddress: `TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE${index}`,
-        usdtQrCode: `data:image/png;base64,mock-usdt-qr-${index + 1}`,
+        usdtQrCode: `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`,
         avatar: index % 3 === 0 ? `https://i.pravatar.cc/150?img=${index + 1}` : undefined,
         role: role as 'user' | 'admin' | 'USER' | 'ADMIN',
         emailVerified: Math.random() > 0.2, // 80% verified
@@ -713,6 +713,16 @@ export default function Users() {
                           <label className="text-sm font-medium text-gray-500">Nome do Titular</label>
                           <p className="text-sm text-gray-900">{selectedUser.pixOwnerName}</p>
                         </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">QR Code PIX</label>
+                          <div className="mt-2">
+                            <img
+                              src={`data:image/png;base64,${selectedUser.pixQrCode}`}
+                              alt="PIX QR Code"
+                              className="w-32 h-32 border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -723,17 +733,37 @@ export default function Users() {
                           <Bitcoin className="h-5 w-5 mr-2" />
                           Criptomoedas
                         </h4>
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                           {selectedUser.btcAddress && (
                             <div>
                               <label className="text-sm font-medium text-gray-500">Endereço Bitcoin</label>
-                              <p className="text-sm text-gray-900 font-mono break-all">{selectedUser.btcAddress}</p>
+                              <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.btcAddress}</p>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">QR Code Bitcoin</label>
+                                <div className="mt-2">
+                                  <img
+                                    src={`data:image/png;base64,${selectedUser.btcQrCode}`}
+                                    alt="Bitcoin QR Code"
+                                    className="w-32 h-32 border border-gray-300 rounded-lg"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           )}
                           {selectedUser.usdtAddress && (
                             <div>
                               <label className="text-sm font-medium text-gray-500">Endereço USDT</label>
-                              <p className="text-sm text-gray-900 font-mono break-all">{selectedUser.usdtAddress}</p>
+                              <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.usdtAddress}</p>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">QR Code USDT</label>
+                                <div className="mt-2">
+                                  <img
+                                    src={`data:image/png;base64,${selectedUser.usdtQrCode}`}
+                                    alt="USDT QR Code"
+                                    className="w-32 h-32 border border-gray-300 rounded-lg"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
