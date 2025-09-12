@@ -142,11 +142,8 @@ export default function Users() {
       await authAPI.approveUser(userToVerify.id);
       console.log('User approved successfully:', userToVerify.id);
       
-      // Update local state
-      const updatedUsers = allUsers.map(user => 
-        user.id === userToVerify.id ? { ...user, adminApproved: true } : user
-      );
-      setAllUsers(updatedUsers);
+      // Reload users data to get the most up-to-date information
+      await fetchUsers();
       
       // Close modal
       setIsConfirmModalOpen(false);
