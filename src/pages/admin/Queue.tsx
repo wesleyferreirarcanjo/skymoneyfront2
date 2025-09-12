@@ -615,10 +615,6 @@ export default function Queue() {
                               {item.type === 'queue' ? (
                                 <>
                                   <div className="flex items-center">
-                                    <Target className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                                    <span>Doação #{item.entry.donation_number}</span>
-                                  </div>
-                                  <div className="flex items-center">
                                     <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                                     <span>Adicionado em {formatDate(item.entry.created_at)}</span>
                                   </div>
