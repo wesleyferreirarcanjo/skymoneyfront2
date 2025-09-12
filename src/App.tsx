@@ -5,6 +5,13 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/admin/Dashboard';
 import UserHome from './pages/users/Home';
+import { User } from './types/user';
+
+// Utility function to check if user is admin
+const isUserAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role?.toLowerCase() === 'admin' || user.email === 'admin@skymoney.com';
+};
 
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -25,7 +32,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role?.toLowerCase() !== 'admin') {
+  if (!isUserAdmin(user)) {
+    console.log('❌ User is not admin, redirecting to home');
     return <Navigate to="/home" replace />;
   }
 
@@ -50,7 +58,8 @@ function UserRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role?.toLowerCase() === 'admin') {
+  if (isUserAdmin(user)) {
+    console.log('❌ User is admin, redirecting to admin dashboard');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -78,15 +87,16 @@ function RoleBasedRedirect() {
   }
 
   if (!user) {
+    console.log('❌ No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role?.toLowerCase() === 'admin') {
-    console.log('✅ Redirecting to admin dashboard');
+  if (isUserAdmin(user)) {
+    console.log('✅ User is admin, redirecting to admin dashboard');
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  console.log('➡️ Redirecting to home');
+  console.log('➡️ User is regular user, redirecting to home');
   return <Navigate to="/home" replace />;
 }
 
