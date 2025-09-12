@@ -77,15 +77,9 @@ export default function Queue() {
     // Create display items for occupied queue entries (with valid user_id)
     const queueItems = allQueueEntries
       .filter(entry => {
+        // Only include entries that have a valid user_id AND a valid user object
         const hasValidUserId = entry.user_id !== null && entry.user_id !== '';
         const hasUser = entry.user !== null && entry.user !== undefined;
-        console.log('🔍 Queue entry filter:', {
-          position: entry.position,
-          user_id: entry.user_id,
-          hasValidUserId,
-          hasUser,
-          user: entry.user
-        });
         return hasValidUserId && hasUser;
       })
       .map(entry => ({
@@ -122,7 +116,6 @@ export default function Queue() {
     // Apply user filter
     if (userFilter === 'in-queue') {
       // Show only occupied queue entries (users actually in the queue)
-      console.log('🔍 Setting in-queue filter, queueItems:', queueItems);
       allItems = queueItems;
     } else if (userFilter === 'waiting') {
       allItems = waitingItems;
@@ -150,7 +143,6 @@ export default function Queue() {
     const endIndex = startIndex + entriesPerPage;
     const paginatedItems = allItems.slice(startIndex, endIndex);
 
-    console.log('🔍 Final allItems for display:', allItems);
     setQueueEntries(paginatedItems);
     setTotalEntries(allItems.length);
     setTotalPages(Math.ceil(allItems.length / entriesPerPage));
