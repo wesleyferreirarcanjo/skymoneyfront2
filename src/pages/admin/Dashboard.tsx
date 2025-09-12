@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../lib/api';
-import { Users, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Users, BarChart3 } from 'lucide-react';
 
 interface UserStats {
   totalUsers: number;
 }
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
   const [userStats, setUserStats] = useState<UserStats>({ totalUsers: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -31,58 +29,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, active: true },
-    { id: 'users', label: 'Usuários', icon: Users },
-    { id: 'settings', label: 'Configurações', icon: Settings },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-gray-800">SkyMoney Admin</h2>
-            <p className="text-sm text-gray-600">{user?.firstName} {user?.lastName}</p>
-          </div>
-
-          {/* Menu */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
-                      item.active
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5 mr-3" />
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t">
-            <button
-              onClick={logout}
-              className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="ml-64 p-8">
+    <div className="ml-64 p-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -158,6 +106,5 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

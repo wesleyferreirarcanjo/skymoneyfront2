@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import AdminDashboard from './pages/admin/Dashboard';
+import { AdminLayout } from './pages/admin';
 import UserHome from './pages/users/Home';
 import { User } from './types/user';
 
@@ -142,7 +142,7 @@ function App() {
             path="/dashboard"
             element={
               <AdminRoute>
-                <AdminDashboard />
+                <AdminLayout />
               </AdminRoute>
             }
           />

@@ -1,1 +1,3 @@
 export { default as AdminDashboard } from './Dashboard';
+export { default as Users } from './Users';
+export { default as AdminLayout } from './AdminLayout';
