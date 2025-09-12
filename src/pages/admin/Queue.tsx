@@ -339,20 +339,6 @@ export default function Queue() {
               </div>
             </div>
 
-            {/* Waiting Queue Info - Always show if there are users waiting */}
-            {getWaitingUsersCount() > 0 && (
-              <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="p-2 rounded-full bg-blue-100 mr-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <span className="text-sm font-medium text-blue-800">Na fila de espera:</span>
-                </div>
-                <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
-                  {getWaitingUsersCount()} usuários
-                </div>
-              </div>
-            )}
 
             {/* Alert Message */}
             {totalEntries >= 100 && (
@@ -360,7 +346,7 @@ export default function Queue() {
                 <div className="flex items-center">
                   <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
                   <p className="text-sm text-red-700">
-                    <strong>Nenhum slot disponível.</strong> {getWaitingUsersCount()} usuários aguardando liberação de slots.
+                    <strong>Nenhum slot disponível.</strong> Todos os 100 slots estão ocupados.
                   </p>
                 </div>
               </div>
@@ -390,9 +376,9 @@ export default function Queue() {
                 <Clock className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Aguardando</p>
+                <p className="text-sm font-medium text-gray-600">Na fila de espera</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {allQueueEntries.filter(e => !e.is_receiver).length}
+                  {getWaitingUsersCount()}
                 </p>
               </div>
             </div>
