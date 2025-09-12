@@ -177,9 +177,9 @@ export default function Users() {
         updatedAt: new Date().toISOString()
       };
 
-      // TODO: Implement API call
-      // await authAPI.updateUser(editingUser.id, updateData);
-      console.log('Updating user:', editingUser.id, updateData);
+      // Call the PATCH /users/:id endpoint
+      await authAPI.updateUser(editingUser.id, updateData);
+      console.log('User updated successfully:', editingUser.id);
       
       // Update local state
       const updatedUsers = allUsers.map(user => 

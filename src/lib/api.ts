@@ -202,4 +202,17 @@ export const authAPI = {
       throw error;
     }
   },
+
+  updateUser: async (userId: string, userData: any): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/users/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(userData),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Update user error:', error);
+      throw error;
+    }
+  },
 };
