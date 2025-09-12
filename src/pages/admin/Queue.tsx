@@ -578,23 +578,23 @@ export default function Queue() {
                               </h4>
                               {item.type === 'queue' ? (
                                 <>
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                    item.entry.is_receiver 
-                                      ? 'bg-green-100 text-green-800' 
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}>
-                                    {item.entry.is_receiver ? (
-                                      <>
-                                        <Crown className="h-3 w-3 mr-1" />
-                                        RECEPTOR
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        AGUARDANDO
-                                      </>
-                                    )}
-                                  </span>
+                                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                     item.entry.is_receiver 
+                                       ? 'bg-green-100 text-green-800' 
+                                       : 'bg-blue-100 text-blue-800'
+                                   }`}>
+                                     {item.entry.is_receiver ? (
+                                       <>
+                                         <Crown className="h-3 w-3 mr-1" />
+                                         RECEPTOR
+                                       </>
+                                     ) : (
+                                       <>
+                                         <Target className="h-3 w-3 mr-1" />
+                                         ATIVO
+                                       </>
+                                     )}
+                                   </span>
                                   <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                     Posição {item.entry.position}
                                   </span>
@@ -643,24 +643,24 @@ export default function Queue() {
                         <div className="flex flex-col items-end space-y-3">
                           {/* Status */}
                           <div className="flex items-center text-sm">
-                            {item.type === 'queue' ? (
-                              item.entry.is_receiver ? (
-                                <span className="text-green-600 flex items-center">
-                                  <Crown className="w-3 h-3 mr-1" />
-                                  <span className="text-xs">Receptor Ativo</span>
-                                </span>
-                              ) : (
-                                <span className="text-yellow-600 flex items-center">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  <span className="text-xs">Na Fila</span>
-                                </span>
-                              )
-                            ) : (
-                              <span className="text-gray-600 flex items-center">
-                                <Clock className="w-3 h-3 mr-1" />
-                                <span className="text-xs">Em Espera</span>
-                              </span>
-                            )}
+                             {item.type === 'queue' ? (
+                               item.entry.is_receiver ? (
+                                 <span className="text-green-600 flex items-center">
+                                   <Crown className="w-3 h-3 mr-1" />
+                                   <span className="text-xs">Receptor Ativo</span>
+                                 </span>
+                               ) : (
+                                 <span className="text-blue-600 flex items-center">
+                                   <Target className="w-3 h-3 mr-1" />
+                                   <span className="text-xs">Posição Ativa</span>
+                                 </span>
+                               )
+                             ) : (
+                               <span className="text-gray-600 flex items-center">
+                                 <Clock className="w-3 h-3 mr-1" />
+                                 <span className="text-xs">Em Espera</span>
+                               </span>
+                             )}
                           </div>
 
                           {/* Action Buttons */}
@@ -905,23 +905,23 @@ export default function Queue() {
                 {/* Entry Status */}
                 <div className="text-center">
                   <div className="flex justify-center space-x-2 mb-4">
-                    <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                      selectedEntry.is_receiver 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {selectedEntry.is_receiver ? (
-                        <>
-                          <Crown className="h-3 w-3 mr-1" />
-                          RECEPTOR ATIVO
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="h-3 w-3 mr-1" />
-                          AGUARDANDO
-                        </>
-                      )}
-                    </span>
+                     <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                       selectedEntry.is_receiver 
+                         ? 'bg-green-100 text-green-800' 
+                         : 'bg-blue-100 text-blue-800'
+                     }`}>
+                       {selectedEntry.is_receiver ? (
+                         <>
+                           <Crown className="h-3 w-3 mr-1" />
+                           RECEPTOR ATIVO
+                         </>
+                       ) : (
+                         <>
+                           <Target className="h-3 w-3 mr-1" />
+                           POSIÇÃO ATIVA
+                         </>
+                       )}
+                     </span>
                     <span className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
                       Posição {selectedEntry.position}
                     </span>
@@ -965,12 +965,12 @@ export default function Queue() {
                       <label className="text-sm font-medium text-gray-500">Posição na Fila</label>
                       <p className="text-sm text-gray-900">{selectedEntry.position}</p>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500">Status</label>
-                      <p className="text-sm text-gray-900">
-                        {selectedEntry.is_receiver ? 'Receptor Ativo' : 'Aguardando'}
-                      </p>
-                    </div>
+                     <div>
+                       <label className="text-sm font-medium text-gray-500">Status</label>
+                       <p className="text-sm text-gray-900">
+                         {selectedEntry.is_receiver ? 'Receptor Ativo' : 'Posição Ativa'}
+                       </p>
+                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Usuários que Passaram</label>
                       <p className="text-sm text-gray-900">{selectedEntry.passed_user_ids.length}</p>
