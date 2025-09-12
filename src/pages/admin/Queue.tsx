@@ -584,14 +584,14 @@ export default function Queue() {
                     >
                       Limpar busca
                     </button>
-                  ) : (
+                  ) : userFilter !== 'waiting' ? (
                     <button
                       onClick={handleAddToQueue}
                       className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
                     >
                       Adicionar primeira entrada
                     </button>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <div className="grid gap-4">
