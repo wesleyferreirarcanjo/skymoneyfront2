@@ -36,6 +36,10 @@ export default function Queue() {
   const [isBulkConfirmModalOpen, setIsBulkConfirmModalOpen] = useState(false);
   const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
   const [bulkRemoveLoading, setBulkRemoveLoading] = useState(false);
+  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+  const [isSwapConfirmModalOpen, setIsSwapConfirmModalOpen] = useState(false);
+  const [swapPositions, setSwapPositions] = useState<number[]>([]);
+  const [swapLoading, setSwapLoading] = useState(false);
 
   useEffect(() => {
     fetchQueueEntries();
@@ -491,6 +495,90 @@ export default function Queue() {
     }
   };
 
+  const closeSwapModal = () => {
+    setIsSwapModalOpen(false);
+    setSwapPositions([]);
+  };
+
+  const closeSwapConfirmModal = () => {
+    setIsSwapConfirmModalOpen(false);
+  };
+
+  const handleSwapPositionSelection = (position: number) => {
+    const entry = allQueueEntries.find(e => e.position === position);
+    
+    // Only allow selection of occupied positions
+    if (!entry || entry.user_id === null || entry.user_id === '') {
+      return;
+    }
+
+    if (swapPositions.includes(position)) {
+      // Deselect if already selected
+      setSwapPositions(prev => prev.filter(pos => pos !== position));
+    } else if (swapPositions.length < 2) {
+      // Select if less than 2 positions selected
+      setSwapPositions(prev => [...prev, position]);
+    }
+  };
+
+  const handleSwapConfirm = async () => {
+    if (swapPositions.length !== 2) return;
+
+    try {
+      setSwapLoading(true);
+      setIsSwapConfirmModalOpen(false);
+      
+      const [firstPosition, secondPosition] = swapPositions;
+      const firstEntry = allQueueEntries.find(e => e.position === firstPosition);
+      const secondEntry = allQueueEntries.find(e => e.position === secondPosition);
+      
+      if (!firstEntry || !secondEntry || !firstEntry.user_id || !secondEntry.user_id) {
+        throw new Error('Entradas não encontradas ou inválidas');
+      }
+
+      // Call the swap API
+      const response = await fetch('/api/queue/swap', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          firstUserId: firstEntry.user_id,
+          secondUserId: secondEntry.user_id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao trocar posições');
+      }
+
+      // Refresh the queue data
+      await fetchQueueEntries();
+      
+      // Show success message
+      setAllocationResults({
+        successCount: 1,
+        totalAttempted: 1,
+        successMessage: `Posições trocadas com sucesso! ${firstEntry.user?.firstName} (posição ${firstPosition}) ↔ ${secondEntry.user?.firstName} (posição ${secondPosition})`
+      });
+      setIsResultsModalOpen(true);
+      closeSwapModal();
+      
+    } catch (error: any) {
+      console.error('Error in swap positions:', error);
+      setAllocationResults({
+        successCount: 0,
+        totalAttempted: 1,
+        errorMessage: `Erro ao trocar posições: ${error.message || 'Erro desconhecido'}`
+      });
+      setIsResultsModalOpen(true);
+    } finally {
+      setSwapLoading(false);
+    }
+  };
+
   // Calculate users waiting to join the queue
   const getWaitingUsersCount = () => {
     const usersInQueue = allQueueEntries
@@ -597,6 +685,23 @@ export default function Queue() {
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Retirar em Massa
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setIsSwapModalOpen(true)}
+                disabled={swapLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {swapLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Trocando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Trocar Posições
                   </>
                 )}
               </button>
@@ -1482,6 +1587,207 @@ export default function Queue() {
         </div>
       )}
 
+      {/* Swap Positions Modal */}
+      {isSwapModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeSwapModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Trocar Posições
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Selecione duas posições ocupadas para trocar os usuários
+                </p>
+              </div>
+              <button
+                onClick={closeSwapModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-6 mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-purple-100 border border-purple-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Selecionada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Ocupada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Receptor Ativo</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Vazia</span>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-blue-700">
+                    <p className="font-medium">Instruções:</p>
+                    <p>Clique em duas posições ocupadas para trocar os usuários. Você pode clicar novamente para desmarcar uma posição.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selection Status */}
+              {swapPositions.length > 0 && (
+                <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="text-sm text-purple-700">
+                    <span className="font-medium">Posições selecionadas:</span>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {swapPositions.map(position => {
+                        const entry = allQueueEntries.find(e => e.position === position);
+                        return (
+                          <span
+                            key={position}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                          >
+                            Posição {position} - {entry?.user?.firstName}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Slots Grid */}
+              <div className="grid grid-cols-10 gap-2 max-h-96 overflow-y-auto">
+                {Array.from({ length: MAX_QUEUE_SLOTS }, (_, index) => {
+                  const position = index + 1;
+                  const existingEntry = allQueueEntries.find(entry => entry.position === position);
+                  const isOccupied = existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '';
+                  const isReceiver = existingEntry && existingEntry.is_receiver;
+                  const isSelected = swapPositions.includes(position);
+                  
+                  if (isOccupied) {
+                    return (
+                      <button
+                        key={position}
+                        onClick={() => handleSwapPositionSelection(position)}
+                        className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                          isSelected
+                            ? 'bg-purple-100 border-purple-300 hover:bg-purple-200'
+                            : isReceiver 
+                              ? 'bg-blue-100 border-blue-300 hover:bg-blue-200' 
+                              : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-gray-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
+                        </div>
+                        {existingEntry.user && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {existingEntry.user.firstName}
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="text-xs text-purple-600 mt-1 font-bold">
+                            SELECIONADA
+                          </div>
+                        )}
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={position}
+                        className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
+                      >
+                        <div className="text-xs font-bold text-green-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          VAZIA
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+
+              {/* Summary */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {swapPositions.length}/2
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Selecionadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-600">
+                      {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Ocupadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {MAX_QUEUE_SLOTS - allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Vazias</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
+              <div className="text-sm text-gray-600">
+                {swapPositions.length === 0 && (
+                  <span>Selecione duas posições para trocar</span>
+                )}
+                {swapPositions.length === 1 && (
+                  <span>Selecione mais uma posição</span>
+                )}
+                {swapPositions.length === 2 && (
+                  <span>Pronto para trocar posições</span>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeSwapModal}
+                  disabled={swapLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => setIsSwapConfirmModalOpen(true)}
+                  disabled={swapPositions.length !== 2 || swapLoading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Trocar Posições
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bulk Remove Modal */}
       {isBulkRemoveModalOpen && (
         <div 
@@ -1762,6 +2068,158 @@ export default function Queue() {
                   <>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Confirmar Remoção
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Swap Confirmation Modal */}
+      {isSwapConfirmModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeSwapConfirmModal}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">
+                Confirmar Troca de Posições
+              </h2>
+              <button
+                onClick={closeSwapConfirmModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <RefreshCw className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Trocar Posições
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Esta ação não pode ser desfeita
+                  </p>
+                </div>
+              </div>
+              
+              {swapPositions.length === 2 && (
+                <div className="mb-6">
+                  {(() => {
+                    const [firstPosition, secondPosition] = swapPositions;
+                    const firstEntry = allQueueEntries.find(e => e.position === firstPosition);
+                    const secondEntry = allQueueEntries.find(e => e.position === secondPosition);
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">Troca de Posições:</h4>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {firstEntry?.user?.firstName} {firstEntry?.user?.lastName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{firstEntry?.user?.email}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-gray-900">Posição {firstPosition}</p>
+                                <p className="text-xs text-gray-500">
+                                  {firstEntry?.is_receiver ? 'Receptor' : 'Ativo'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-center">
+                              <div className="flex items-center space-x-2 text-purple-600">
+                                <RefreshCw className="h-4 w-4" />
+                                <span className="text-sm font-medium">TROCARÁ COM</span>
+                                <RefreshCw className="h-4 w-4" />
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {secondEntry?.user?.firstName} {secondEntry?.user?.lastName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{secondEntry?.user?.email}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-gray-900">Posição {secondPosition}</p>
+                                <p className="text-xs text-gray-500">
+                                  {secondEntry?.is_receiver ? 'Receptor' : 'Ativo'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              
+              <p className="text-gray-700 mb-6">
+                Tem certeza que deseja trocar as posições destes dois usuários? Esta ação não pode ser desfeita.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Atenção:</p>
+                    <p>Se um dos usuários for o receptor ativo, a fila será reorganizada automaticamente.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeSwapConfirmModal}
+                disabled={swapLoading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSwapConfirm}
+                disabled={swapLoading}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {swapLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Trocando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Confirmar Troca
                   </>
                 )}
               </button>
