@@ -45,6 +45,7 @@ export interface AuthResponse {
     refreshToken?: string;
   };
   message?: string;
+  isAuthError?: boolean;
 }
 
 export interface LoginRequest {

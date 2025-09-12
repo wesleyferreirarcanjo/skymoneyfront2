@@ -26,16 +26,31 @@ const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}):
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      // Create more specific error messages for authentication issues
+      if (response.status === 401) {
+        throw new Error(`401: Unauthorized - Token may be expired or invalid`);
+      } else if (response.status === 403) {
+        throw new Error(`403: Forbidden - Access denied`);
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    }
+
+    return response.json();
+  } catch (error: any) {
+    // Re-throw network errors with more context
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(`Network error: Unable to connect to server`);
+    }
+    throw error;
   }
-
-  return response.json();
 };
 
 export const authAPI = {
@@ -113,13 +128,21 @@ export const authAPI = {
 
   getProfile: async (): Promise<AuthResponse> => {
     try {
-      return await makeAuthenticatedRequest('/auth/profile');
-    } catch (error) {
+      const result = await makeAuthenticatedRequest('/auth/profile');
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error: any) {
       console.error('Get profile error:', error);
-      // Retornar erro estruturado em vez de throw
+
+      // Check if it's an authentication error
+      const isAuthError = error.message?.includes('401') || error.message?.includes('Unauthorized');
+
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to get profile'
+        message: error.message || 'Failed to get profile',
+        isAuthError: isAuthError
       };
     }
   },

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
 import { User, authAPI } from '../lib/api';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -43,6 +45,7 @@ interface AuthContextType extends AuthState {
   resendEmailVerification: () => Promise<void>;
   resendPhoneVerification: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshToken: () => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -134,24 +137,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = localStorage.getItem('user');
 
         if (token && userData) {
-          const user = JSON.parse(userData);
-          dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
-
-          // Refresh profile to get latest data
           try {
+            const user = JSON.parse(userData);
+
+            // First, validate if the token is still valid by calling getProfile
             const response = await authAPI.getProfile();
+
             if (response.success) {
+              // Token is valid, update user data and set authenticated state
               dispatch({ type: 'UPDATE_USER', payload: response.data });
               localStorage.setItem('user', JSON.stringify(response.data));
+              dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data, token } });
+            } else if (response.isAuthError) {
+              // Token is invalid or expired, try to refresh it first
+              console.log('Token expirado, tentando renovar...');
+              const refreshSuccess = await refreshToken();
+
+              if (refreshSuccess) {
+                // Token refreshed successfully, try getProfile again
+                const retryResponse = await authAPI.getProfile();
+                if (retryResponse.success) {
+                  dispatch({ type: 'UPDATE_USER', payload: retryResponse.data });
+                  localStorage.setItem('user', JSON.stringify(retryResponse.data));
+                  dispatch({ type: 'AUTH_SUCCESS', payload: { user: retryResponse.data, token: localStorage.getItem('authToken')! } });
+                } else {
+                  // Still failed after refresh, logout
+                  console.log('Falha ao obter perfil após renovar token, fazendo logout');
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('refreshToken');
+                  localStorage.removeItem('user');
+                  dispatch({ type: 'SET_LOADING', payload: false });
+                }
+              } else {
+                // Could not refresh token, logout
+                console.log('Não foi possível renovar token, fazendo logout automático');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                dispatch({ type: 'SET_LOADING', payload: false });
+              }
+            } else {
+              // Other error (network, server error), keep user logged in with cached data
+              console.log('Erro de servidor/rede, mantendo usuário logado com dados em cache');
+              dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
             }
-          } catch (error) {
-            console.error('Failed to refresh profile:', error);
+          } catch (error: any) {
+            console.log('Erro ao validar token:', error);
+
+            // Check if it's an authentication error (401, 403)
+            const isAuthError = error.message?.includes('401') ||
+                               error.message?.includes('403') ||
+                               error.message?.includes('Unauthorized') ||
+                               error.message?.includes('Forbidden');
+
+            if (isAuthError) {
+              // Token expired or invalid, clear storage and logout
+              console.log('Token expirado/inválido, fazendo logout automático');
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('user');
+              dispatch({ type: 'SET_LOADING', payload: false });
+            } else {
+              // Network error or other issue, keep user logged in with cached data
+              console.log('Erro de rede, mantendo usuário logado com dados em cache');
+              const user = JSON.parse(userData);
+              dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+            }
           }
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
+        // Clear potentially corrupted data
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
@@ -167,12 +226,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('🔍 Login response:', response);
 
       if (response.success) {
-        const { user, accessToken } = response.data;
+        const { user, accessToken, refreshToken } = response.data;
 
-        console.log('✅ Login successful, storing data:', { user, accessToken });
+        console.log('✅ Login successful, storing data:', { user, accessToken, refreshToken });
 
         // Store in localStorage
         localStorage.setItem('authToken', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
         localStorage.setItem('user', JSON.stringify(user));
 
         dispatch({ type: 'AUTH_SUCCESS', payload: { user, token: accessToken } });
@@ -218,10 +280,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authAPI.register(data);
 
       if (response.success) {
-        const { user, accessToken } = response.data;
+        const { user, accessToken, refreshToken } = response.data;
 
         // Store in localStorage
         localStorage.setItem('authToken', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken);
+        }
         localStorage.setItem('user', JSON.stringify(user));
 
         dispatch({ type: 'AUTH_SUCCESS', payload: { user, token: accessToken } });
@@ -237,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     dispatch({ type: 'AUTH_LOGOUT' });
   };
@@ -303,6 +369,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshToken = async (): Promise<boolean> => {
+    try {
+      const refreshTokenValue = localStorage.getItem('refreshToken');
+      if (!refreshTokenValue) {
+        console.log('No refresh token available');
+        return false;
+      }
+
+      // Call refresh token endpoint (assuming it exists)
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.access_token) {
+          // Update token in localStorage and state
+          localStorage.setItem('authToken', data.access_token);
+          if (data.refresh_token) {
+            localStorage.setItem('refreshToken', data.refresh_token);
+          }
+          dispatch({ type: 'AUTH_SUCCESS', payload: { user: state.user!, token: data.access_token } });
+          console.log('Token refreshed successfully');
+          return true;
+        }
+      }
+
+      console.log('Failed to refresh token');
+      return false;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
+    }
+  };
+
   const refreshProfile = async () => {
     try {
       const response = await authAPI.getProfile();
@@ -329,6 +434,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resendEmailVerification,
     resendPhoneVerification,
     refreshProfile,
+    refreshToken,
     clearError,
   };
 
