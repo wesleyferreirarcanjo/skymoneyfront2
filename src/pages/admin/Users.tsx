@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -13,6 +13,8 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [showUnverifiedOnly, setShowUnverifiedOnly] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -191,9 +193,16 @@ export default function Users() {
   };
 
   const handleViewProfile = (userId: string) => {
-    // TODO: Implement view profile functionality
-    console.log('Viewing profile:', userId);
-    // Could open a modal or navigate to profile page
+    const user = allUsers.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsModalOpen(true);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
   };
 
   const handlePageChange = (page: number) => {
@@ -532,6 +541,244 @@ export default function Users() {
             )}
           </div>
         </div>
+
+        {/* User Profile Modal */}
+        {isModalOpen && selectedUser && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Perfil do Usuário
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* User Avatar and Basic Info */}
+                  <div className="lg:col-span-1">
+                    <div className="text-center">
+                      {selectedUser.avatar ? (
+                        <img
+                          src={selectedUser.avatar}
+                          alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
+                          className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                        />
+                      ) : (
+                        <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center mx-auto mb-4">
+                          <User className="h-16 w-16 text-gray-600" />
+                        </div>
+                      )}
+                      
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {selectedUser.firstName} {selectedUser.lastName}
+                      </h3>
+                      
+                      <div className="flex justify-center space-x-2 mb-4">
+                        <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getRoleBadgeColor(selectedUser.role)}`}>
+                          {selectedUser.role.toUpperCase()}
+                        </span>
+                        <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusBadgeColor(selectedUser.status)}`}>
+                          {selectedUser.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Verification Status */}
+                      <div className="space-y-2">
+                        <div className={`flex items-center justify-center ${selectedUser.role.toLowerCase() === 'admin' || selectedUser.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className={`w-3 h-3 rounded-full mr-2 ${selectedUser.role.toLowerCase() === 'admin' || selectedUser.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                          <span className="text-sm font-medium">
+                            {selectedUser.role.toLowerCase() === 'admin' ? 'Admin (Verificado)' : selectedUser.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Details */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Personal Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <User className="h-5 w-5 mr-2" />
+                        Informações Pessoais
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Nome Completo</label>
+                          <p className="text-sm text-gray-900">{selectedUser.firstName} {selectedUser.lastName}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">CPF</label>
+                          <p className="text-sm text-gray-900">{selectedUser.cpf}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Data de Nascimento</label>
+                          <p className="text-sm text-gray-900">{formatDate(selectedUser.birthDate)}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
+                          <p className="text-sm text-gray-900 font-mono">{selectedUser.id}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Mail className="h-5 w-5 mr-2" />
+                        Informações de Contato
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Email</label>
+                          <p className="text-sm text-gray-900 flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                            {selectedUser.email}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Telefone</label>
+                          <p className="text-sm text-gray-900 flex items-center">
+                            <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                            {selectedUser.phone}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Address Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <MapPin className="h-5 w-5 mr-2" />
+                        Endereço
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Endereço</label>
+                          <p className="text-sm text-gray-900">{selectedUser.address}, {selectedUser.addressNumber}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">CEP</label>
+                          <p className="text-sm text-gray-900">{selectedUser.cep}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Banking Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <CreditCard className="h-5 w-5 mr-2" />
+                        Informações Bancárias
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Banco</label>
+                          <p className="text-sm text-gray-900">{selectedUser.bank}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Agência</label>
+                          <p className="text-sm text-gray-900">{selectedUser.agency}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Conta</label>
+                          <p className="text-sm text-gray-900">{selectedUser.account}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* PIX Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <QrCode className="h-5 w-5 mr-2" />
+                        PIX
+                      </h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Chave PIX</label>
+                          <p className="text-sm text-gray-900 font-mono">{selectedUser.pixKey}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Tipo de Chave</label>
+                          <p className="text-sm text-gray-900">{selectedUser.pixKeyType}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Nome do Titular</label>
+                          <p className="text-sm text-gray-900">{selectedUser.pixOwnerName}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Crypto Information */}
+                    {(selectedUser.btcAddress || selectedUser.usdtAddress) && (
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <Bitcoin className="h-5 w-5 mr-2" />
+                          Criptomoedas
+                        </h4>
+                        <div className="space-y-4">
+                          {selectedUser.btcAddress && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-500">Endereço Bitcoin</label>
+                              <p className="text-sm text-gray-900 font-mono break-all">{selectedUser.btcAddress}</p>
+                            </div>
+                          )}
+                          {selectedUser.usdtAddress && (
+                            <div>
+                              <label className="text-sm font-medium text-gray-500">Endereço USDT</label>
+                              <p className="text-sm text-gray-900 font-mono break-all">{selectedUser.usdtAddress}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Account Dates */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Calendar className="h-5 w-5 mr-2" />
+                        Datas da Conta
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Criado em</label>
+                          <p className="text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500">Atualizado em</label>
+                          <p className="text-sm text-gray-900">{formatDate(selectedUser.updatedAt)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Fechar
+                </button>
+                <button
+                  onClick={() => handleEditUser(selectedUser.id)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Editar Usuário
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }
