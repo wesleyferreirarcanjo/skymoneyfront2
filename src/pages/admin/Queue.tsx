@@ -189,21 +189,6 @@ export default function Queue() {
     }
   };
 
-  const handleSetReceiver = async (entryId: string) => {
-    const entry = allQueueEntries.find(e => e.id === entryId);
-    if (!entry) return;
-
-    try {
-      setActionLoading(entryId);
-      await queueAPI.setReceiver(entry.donation_number, entry.user_id);
-      await fetchQueueEntries();
-    } catch (error: any) {
-      console.error('Error setting receiver:', error);
-      alert(error.message || 'Erro ao definir como receptor');
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
 
   const handleDeleteEntry = (entryId: string) => {
@@ -690,20 +675,6 @@ export default function Queue() {
                                   <Eye className="w-3 h-3 mr-1" />
                                   Ver
                                 </button>
-                                {!item.entry.is_receiver && (
-                                  <button
-                                    onClick={() => handleSetReceiver(item.id)}
-                                    disabled={actionLoading === item.id}
-                                    className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-green-100 text-green-800 hover:bg-green-200 disabled:opacity-50"
-                                  >
-                                    {actionLoading === item.id ? (
-                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-green-600 mr-1"></div>
-                                    ) : (
-                                      <Crown className="w-3 h-3 mr-1" />
-                                    )}
-                                    Definir Receptor
-                                  </button>
-                                )}
                                 <button
                                   onClick={() => handleDeleteEntry(item.id)}
                                   disabled={actionLoading === item.id}
@@ -1035,25 +1006,6 @@ export default function Queue() {
               >
                 Fechar
               </button>
-              {!selectedEntry.is_receiver && (
-                <button
-                  onClick={() => handleSetReceiver(selectedEntry.id)}
-                  disabled={actionLoading === selectedEntry.id}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {actionLoading === selectedEntry.id ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Definindo...
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="h-4 w-4 mr-2" />
-                      Definir como Receptor
-                    </>
-                  )}
-                </button>
-              )}
               <button
                 onClick={() => handleDeleteEntry(selectedEntry.id)}
                 disabled={actionLoading === selectedEntry.id}
