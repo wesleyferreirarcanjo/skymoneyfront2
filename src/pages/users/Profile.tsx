@@ -1,33 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { User, Mail, Phone, MapPin, Calendar, Edit3, Save, X, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Profile() {
-  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<UserType | null>(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    cpf: '',
-    birthDate: '',
-    address: '',
-    addressNumber: '',
-    cep: '',
-    bank: '',
-    agency: '',
-    account: '',
-    pixKey: '',
-    pixKeyType: '',
-    pixOwnerName: '',
-    pixCopyPaste: '',
-    btcAddress: '',
-    usdtAddress: '',
-  });
 
   useEffect(() => {
     fetchProfileData();
@@ -38,39 +17,11 @@ export default function Profile() {
       setLoading(true);
       const userData = await authAPI.getProfile();
       setProfileData(userData);
-      setFormData({
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        email: userData.email || '',
-        phone: userData.phone || '',
-        cpf: userData.cpf || '',
-        birthDate: userData.birthDate || '',
-        address: userData.address || '',
-        addressNumber: userData.addressNumber || '',
-        cep: userData.cep || '',
-        bank: userData.bank || '',
-        agency: userData.agency || '',
-        account: userData.account || '',
-        pixKey: userData.pixKey || '',
-        pixKeyType: userData.pixKeyType || '',
-        pixOwnerName: userData.pixOwnerName || '',
-        pixCopyPaste: userData.pixCopyPaste || '',
-        btcAddress: userData.btcAddress || '',
-        usdtAddress: userData.usdtAddress || '',
-      });
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -81,39 +32,6 @@ export default function Profile() {
     } catch (err) {
       console.error('Erro ao copiar:', err);
     }
-  };
-
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log('Saving profile data:', formData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    // Reset form data to original values
-    if (profileData) {
-      setFormData({
-        firstName: profileData.firstName || '',
-        lastName: profileData.lastName || '',
-        email: profileData.email || '',
-        phone: profileData.phone || '',
-        cpf: profileData.cpf || '',
-        birthDate: profileData.birthDate || '',
-        address: profileData.address || '',
-        addressNumber: profileData.addressNumber || '',
-        cep: profileData.cep || '',
-        bank: profileData.bank || '',
-        agency: profileData.agency || '',
-        account: profileData.account || '',
-        pixKey: profileData.pixKey || '',
-        pixKeyType: profileData.pixKeyType || '',
-        pixOwnerName: profileData.pixOwnerName || '',
-        pixCopyPaste: profileData.pixCopyPaste || '',
-        btcAddress: profileData.btcAddress || '',
-        usdtAddress: profileData.usdtAddress || '',
-      });
-    }
-    setIsEditing(false);
   };
 
   if (loading) {
@@ -134,31 +52,9 @@ export default function Profile() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Perfil</h1>
-              <p className="text-gray-600">Gerencie suas informações pessoais</p>
-            </div>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                isEditing
-                  ? 'bg-gray-500 hover:bg-gray-600 text-white'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {isEditing ? (
-                <>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancelar
-                </>
-              ) : (
-                <>
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Editar
-                </>
-              )}
-            </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Perfil</h1>
+            <p className="text-gray-600">Visualize suas informações pessoais</p>
           </div>
         </div>
 
@@ -211,17 +107,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Nome
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.firstName || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.firstName || 'Não informado'}</p>
                   </div>
 
                   {/* Last Name */}
@@ -229,17 +115,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Sobrenome
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.lastName || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.lastName || 'Não informado'}</p>
                   </div>
 
                   {/* Email */}
@@ -248,17 +124,7 @@ export default function Profile() {
                       <Mail className="w-4 h-4 inline mr-1" />
                       Email
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.email}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.email}</p>
                   </div>
 
                   {/* Phone */}
@@ -267,18 +133,7 @@ export default function Profile() {
                       <Phone className="w-4 h-4 inline mr-1" />
                       Telefone
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="(11) 99999-9999"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.phone || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.phone || 'Não informado'}</p>
                   </div>
 
                   {/* CPF */}
@@ -287,18 +142,7 @@ export default function Profile() {
                       <Hash className="w-4 h-4 inline mr-1" />
                       CPF
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="cpf"
-                        value={formData.cpf}
-                        onChange={handleInputChange}
-                        placeholder="000.000.000-00"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.cpf || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.cpf || 'Não informado'}</p>
                   </div>
 
                   {/* Date of Birth */}
@@ -307,17 +151,7 @@ export default function Profile() {
                       <Calendar className="w-4 h-4 inline mr-1" />
                       Data de Nascimento
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        name="birthDate"
-                        value={formData.birthDate}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{formatDate(profileData?.birthDate || '')}</p>
-                    )}
+                    <p className="text-gray-900">{formatDate(profileData?.birthDate || '')}</p>
                   </div>
 
                   {/* Address */}
@@ -326,18 +160,7 @@ export default function Profile() {
                       <MapPin className="w-4 h-4 inline mr-1" />
                       Endereço
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        placeholder="Rua, Avenida, etc."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.address || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.address || 'Não informado'}</p>
                   </div>
 
                   {/* Address Number */}
@@ -345,18 +168,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Número
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="addressNumber"
-                        value={formData.addressNumber}
-                        onChange={handleInputChange}
-                        placeholder="123"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.addressNumber || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.addressNumber || 'Não informado'}</p>
                   </div>
 
                   {/* CEP */}
@@ -364,18 +176,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       CEP
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="cep"
-                        value={formData.cep}
-                        onChange={handleInputChange}
-                        placeholder="00000-000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.cep || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.cep || 'Não informado'}</p>
                   </div>
                 </div>
               </div>
@@ -393,18 +194,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Banco
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="bank"
-                        value={formData.bank}
-                        onChange={handleInputChange}
-                        placeholder="Nome do banco"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.bank || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.bank || 'Não informado'}</p>
                   </div>
 
                   {/* Agency */}
@@ -412,18 +202,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Agência
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="agency"
-                        value={formData.agency}
-                        onChange={handleInputChange}
-                        placeholder="0000"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.agency || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.agency || 'Não informado'}</p>
                   </div>
 
                   {/* Account */}
@@ -431,18 +210,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Conta
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="account"
-                        value={formData.account}
-                        onChange={handleInputChange}
-                        placeholder="00000-0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.account || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.account || 'Não informado'}</p>
                   </div>
                 </div>
               </div>
@@ -460,22 +228,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Tipo de Chave PIX
                     </label>
-                    {isEditing ? (
-                      <select
-                        name="pixKeyType"
-                        value={formData.pixKeyType}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Selecione o tipo</option>
-                        <option value="cpf">CPF</option>
-                        <option value="email">Email</option>
-                        <option value="phone">Telefone</option>
-                        <option value="random">Chave Aleatória</option>
-                      </select>
-                    ) : (
-                      <p className="text-gray-900">{profileData?.pixKeyType || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.pixKeyType || 'Não informado'}</p>
                   </div>
 
                   {/* PIX Key */}
@@ -483,18 +236,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Chave PIX
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="pixKey"
-                        value={formData.pixKey}
-                        onChange={handleInputChange}
-                        placeholder="Sua chave PIX"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.pixKey || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.pixKey || 'Não informado'}</p>
                   </div>
 
                   {/* PIX Owner Name */}
@@ -502,18 +244,7 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Nome do Titular PIX
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="pixOwnerName"
-                        value={formData.pixOwnerName}
-                        onChange={handleInputChange}
-                        placeholder="Nome completo do titular"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">{profileData?.pixOwnerName || 'Não informado'}</p>
-                    )}
+                    <p className="text-gray-900">{profileData?.pixOwnerName || 'Não informado'}</p>
                   </div>
 
                   {/* PIX Copy & Paste */}
@@ -521,29 +252,18 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       PIX Copia e Cola
                     </label>
-                    {isEditing ? (
-                      <textarea
-                        name="pixCopyPaste"
-                        value={formData.pixCopyPaste}
-                        onChange={handleInputChange}
-                        rows={3}
-                        placeholder="Código PIX para copiar e colar"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <div className="relative">
-                        <p className="text-gray-900 break-all pr-10">{profileData?.pixCopyPaste || 'Não informado'}</p>
-                        {profileData?.pixCopyPaste && (
-                          <button
-                            onClick={() => copyToClipboard(profileData.pixCopyPaste, 'PIX Copia e Cola')}
-                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Copiar PIX"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div className="relative">
+                      <p className="text-gray-900 break-all pr-10">{profileData?.pixCopyPaste || 'Não informado'}</p>
+                      {profileData?.pixCopyPaste && (
+                        <button
+                          onClick={() => copyToClipboard(profileData.pixCopyPaste, 'PIX Copia e Cola')}
+                          className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copiar PIX"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* PIX QR Code */}
@@ -586,29 +306,18 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Endereço Bitcoin (BTC)
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="btcAddress"
-                        value={formData.btcAddress}
-                        onChange={handleInputChange}
-                        placeholder="Endereço da carteira Bitcoin"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <div className="relative">
-                        <p className="text-gray-900 break-all pr-10">{profileData?.btcAddress || 'Não informado'}</p>
-                        {profileData?.btcAddress && (
-                          <button
-                            onClick={() => copyToClipboard(profileData.btcAddress, 'Endereço Bitcoin')}
-                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Copiar Endereço Bitcoin"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div className="relative">
+                      <p className="text-gray-900 break-all pr-10">{profileData?.btcAddress || 'Não informado'}</p>
+                      {profileData?.btcAddress && (
+                        <button
+                          onClick={() => copyToClipboard(profileData.btcAddress, 'Endereço Bitcoin')}
+                          className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copiar Endereço Bitcoin"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* USDT Address */}
@@ -616,29 +325,18 @@ export default function Profile() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Endereço USDT
                     </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        name="usdtAddress"
-                        value={formData.usdtAddress}
-                        onChange={handleInputChange}
-                        placeholder="Endereço da carteira USDT"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <div className="relative">
-                        <p className="text-gray-900 break-all pr-10">{profileData?.usdtAddress || 'Não informado'}</p>
-                        {profileData?.usdtAddress && (
-                          <button
-                            onClick={() => copyToClipboard(profileData.usdtAddress, 'Endereço USDT')}
-                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Copiar Endereço USDT"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div className="relative">
+                      <p className="text-gray-900 break-all pr-10">{profileData?.usdtAddress || 'Não informado'}</p>
+                      {profileData?.usdtAddress && (
+                        <button
+                          onClick={() => copyToClipboard(profileData.usdtAddress, 'Endereço USDT')}
+                          className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                          title="Copiar Endereço USDT"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -696,24 +394,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Save/Cancel Buttons */}
-              {isEditing && (
-                <div className="flex justify-end space-x-4 pt-6 border-t">
-                  <button
-                    onClick={handleCancel}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="flex items-center px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

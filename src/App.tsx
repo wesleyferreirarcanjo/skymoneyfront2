@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import { AdminLayout } from './pages/admin';
 import UserHome from './pages/users/Home';
 import Profile from './pages/users/Profile';
+import UserLayout from './pages/users/UserLayout';
 import { User } from './types/user';
 
 // Utility function to check if user is admin
@@ -177,7 +178,7 @@ function App() {
             path="/profile"
             element={
               <UserRoute>
-                <Profile />
+                <UserLayout />
               </UserRoute>
             }
           />
