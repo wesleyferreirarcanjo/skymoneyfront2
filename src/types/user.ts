@@ -25,6 +25,7 @@ export interface User {
   role: 'user' | 'admin' | 'USER' | 'ADMIN';
   emailVerified: boolean;
   phoneVerified: boolean;
+  adminApproved: boolean;
   status: UserStatus;
   createdAt: string;
   updatedAt: string;

@@ -65,18 +65,8 @@ export default function Users() {
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Lista de Usuários ({users.length})
+                  Lista de Usuários
                 </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    Usuários: {users.filter(u => u.role.toLowerCase() === 'user').length}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    Admins: {users.filter(u => u.role.toLowerCase() === 'admin').length}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -162,13 +152,11 @@ export default function Users() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            <div className={`flex items-center ${userData.emailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                              <Mail className="h-4 w-4 mr-1" />
-                              {userData.emailVerified ? 'Verificado' : 'Não verificado'}
-                            </div>
-                            <div className={`flex items-center mt-1 ${userData.phoneVerified ? 'text-green-600' : 'text-red-600'}`}>
-                              <Phone className="h-4 w-4 mr-1" />
-                              {userData.phoneVerified ? 'Verificado' : 'Não verificado'}
+                            <div className={`flex items-center ${userData.role.toLowerCase() === 'admin' || userData.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
+                              <div className="w-4 h-4 mr-1 flex items-center justify-center">
+                                <div className={`w-2 h-2 rounded-full ${userData.role.toLowerCase() === 'admin' || userData.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              </div>
+                              {userData.role.toLowerCase() === 'admin' ? 'Admin (Verificado)' : userData.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
                             </div>
                           </div>
                         </td>
