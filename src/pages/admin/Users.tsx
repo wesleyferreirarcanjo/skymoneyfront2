@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -10,9 +10,15 @@ export default function Users() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [usersPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
   useEffect(() => {
     fetchUsers();
   }, [currentPage]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [searchTerm, allUsers]);
 
   // Mock data generator for testing
   const generateMockUsers = (count: number): UserType[] => {
@@ -77,22 +83,51 @@ export default function Users() {
     try {
       setLoading(true);
       
-      // Generate 1000 mock users
-      const mockUsers = generateMockUsers(1000);
-      
-      // Simulate pagination on frontend
-      const startIndex = (currentPage - 1) * usersPerPage;
-      const endIndex = startIndex + usersPerPage;
-      const paginatedUsers = mockUsers.slice(startIndex, endIndex);
-      
-      setUsers(paginatedUsers);
-      setTotalUsers(mockUsers.length);
-      setTotalPages(Math.ceil(mockUsers.length / usersPerPage));
+      // Generate 1000 mock users only once
+      if (allUsers.length === 0) {
+        const mockUsers = generateMockUsers(1000);
+        setAllUsers(mockUsers);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterUsers = () => {
+    if (!allUsers.length) return;
+
+    let filteredUsers = allUsers;
+
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filteredUsers = allUsers.filter(user => 
+        user.firstName.toLowerCase().includes(searchLower) ||
+        user.lastName.toLowerCase().includes(searchLower) ||
+        user.email.toLowerCase().includes(searchLower) ||
+        user.phone.includes(searchTerm)
+      );
+    }
+
+    // Apply pagination to filtered results
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+    setUsers(paginatedUsers);
+    setTotalUsers(filteredUsers.length);
+    setTotalPages(Math.ceil(filteredUsers.length / usersPerPage));
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
   };
 
   const formatDate = (dateString: string) => {
@@ -176,6 +211,39 @@ export default function Users() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800">Usuários</h1>
             <p className="text-gray-600">Gerenciar todos os usuários do sistema</p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="bg-white rounded-lg shadow-md mb-6">
+            <div className="p-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Buscar por nome, email ou telefone..."
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {searchTerm && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button
+                      onClick={clearSearch}
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {searchTerm && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {totalUsers} resultado{totalUsers !== 1 ? 's' : ''} encontrado{totalUsers !== 1 ? 's' : ''} para "{searchTerm}"
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Users Grid */}
@@ -307,6 +375,17 @@ export default function Users() {
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
+                    {/* Go to First Page */}
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Primeira página"
+                    >
+                      <ChevronsLeft className="w-4 h-4" />
+                    </button>
+                    
+                    {/* Previous Page */}
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -316,6 +395,7 @@ export default function Users() {
                       Anterior
                     </button>
                     
+                    {/* Page Numbers */}
                     <div className="flex space-x-1">
                       {getPageNumbers().map((page) => (
                         <button
@@ -332,6 +412,7 @@ export default function Users() {
                       ))}
                     </div>
                     
+                    {/* Next Page */}
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
@@ -339,6 +420,16 @@ export default function Users() {
                     >
                       Próximo
                       <ChevronRight className="w-4 h-4 ml-1" />
+                    </button>
+                    
+                    {/* Go to Last Page */}
+                    <button
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Última página"
+                    >
+                      <ChevronsRight className="w-4 h-4" />
                     </button>
                   </div>
                   
