@@ -3,7 +3,7 @@
 # Script de inicialização para processar template do nginx
 # e iniciar o nginx com a configuração correta
 
-echo "🚀 Iniciando aplicação..."
+echo "🚀 Iniciando aplicação SkyMoney IA 2.0..."
 
 # Verificar se a variável de ambiente está definida
 if [ -z "$API_BACKEND_URL" ]; then

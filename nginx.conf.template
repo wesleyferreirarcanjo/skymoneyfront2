@@ -1,0 +1,231 @@
+# Configuração otimizada para aplicação React SPA
+# Suporte completo para client-side routing e performance máxima
+
+# Configurações globais de performance
+worker_processes auto;
+worker_rlimit_nofile 1024;
+events {
+    worker_connections 1024;
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Logs otimizados
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for" '
+                    'rt=$request_time uct="$upstream_connect_time" '
+                    'uht="$upstream_header_time" urt="$upstream_response_time"';
+
+    access_log /var/log/nginx/access.log main;
+    error_log /var/log/nginx/error.log warn;
+
+    # Buffers e timeouts otimizados
+    client_max_body_size 16M;
+    client_body_buffer_size 128k;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 4k;
+    output_buffers 1 32k;
+    postpone_output 1460;
+
+    # Timeouts
+    client_header_timeout 3m;
+    client_body_timeout 3m;
+    send_timeout 3m;
+    keepalive_timeout 65;
+    keepalive_requests 100;
+
+    # Gzip compression avançada
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/xml+rss
+        application/json
+        application/ld+json
+        application/atom+xml
+        application/rss+xml
+        application/geo+json
+        application/manifest+json
+        application/x-font-ttf
+        application/vnd.ms-fontobject
+        font/opentype
+        image/svg+xml;
+
+    # Brotli compression (se disponível)
+    # brotli on;
+    # brotli_comp_level 6;
+    # brotli_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss;
+
+    # Open File Cache
+    open_file_cache max=1000 inactive=20s;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+
+    server {
+        listen 80;
+        server_name _;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Configurações de segurança
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-DNS-Prefetch-Control "on" always;
+
+        # CSP básico para React apps (ajuste conforme necessário)
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;" always;
+
+        # HSTS (descomente se usar HTTPS)
+        # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+        # Headers de performance
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Permitted-Cross-Domain-Policies "none" always;
+
+        # Handle client-side routing com fallback otimizado
+        location / {
+            try_files $uri $uri/ /index.html;
+
+            # Headers específicos para HTML
+            location ~* \.html$ {
+                expires -1;
+                add_header Cache-Control "no-cache, no-store, must-revalidate";
+                add_header Pragma "no-cache";
+                add_header Expires "0";
+            }
+        }
+
+        # API routes - proxy para backend externo via variável de ambiente
+        location /api/ {
+            # Remover /api do path antes de redirecionar
+            rewrite ^/api/(.*)$ /$1 break;
+            
+            # URL será substituída em runtime via variável de ambiente
+            proxy_pass ${API_BACKEND_URL};
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            proxy_read_timeout 86400;
+
+            # Headers adicionais para API externa
+            proxy_set_header X-Forwarded-Host $server_name;
+            proxy_set_header X-Forwarded-Port $server_port;
+            proxy_set_header X-Forwarded-Prefix /;
+
+            # SSL/TLS - ajustar conforme necessário
+            proxy_ssl_verify off;  # Para desenvolvimento/teste
+            # proxy_ssl_verify on;  # Para produção com certificado válido
+        }
+
+        # Cache agressivo para assets estáticos (1 ano)
+        location ~* \.(js|css)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            add_header X-Content-Type-Options "nosniff";
+            access_log off;
+
+            # Headers específicos por tipo
+            location ~* \.js$ {
+                add_header Content-Type "application/javascript; charset=utf-8";
+            }
+
+            location ~* \.css$ {
+                add_header Content-Type "text/css; charset=utf-8";
+            }
+        }
+
+        # Cache para imagens e fonts (6 meses)
+        location ~* \.(png|jpg|jpeg|gif|ico|svg|webp|avif)$ {
+            expires 6M;
+            add_header Cache-Control "public, immutable";
+            add_header X-Content-Type-Options "nosniff";
+            access_log off;
+
+            # WebP e AVIF support
+            location ~* \.(webp|avif)$ {
+                expires 6M;
+                add_header Cache-Control "public, immutable";
+            }
+        }
+
+        # Cache para fonts (1 ano)
+        location ~* \.(woff|woff2|ttf|eot|otf)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+            add_header Access-Control-Allow-Origin "*";
+            add_header X-Content-Type-Options "nosniff";
+            access_log off;
+        }
+
+        # Cache para arquivos de manifesto e service worker
+        location ~* \.(webmanifest|json)$ {
+            expires 1h;
+            add_header Cache-Control "public, must-revalidate";
+            add_header X-Content-Type-Options "nosniff";
+        }
+
+        # Service Worker (sem cache para updates)
+        location /sw.js {
+            expires -1;
+            add_header Cache-Control "no-cache";
+            add_header X-Content-Type-Options "nosniff";
+        }
+
+        # Arquivos de source maps (desenvolvimento)
+        location ~* \.(map)$ {
+            expires 1d;
+            add_header Cache-Control "public";
+            access_log off;
+        }
+
+        # Bloquear acesso a arquivos sensíveis
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        location ~ \.(env|git) {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        # Health check endpoint
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        # Error pages otimizados para SPA
+        error_page 404 /index.html;
+        error_page 500 502 503 504 /index.html;
+
+        # Custom error pages
+        location = /50x.html {
+            root /usr/share/nginx/html;
+        }
+    }
+}

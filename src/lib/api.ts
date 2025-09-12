@@ -1,6 +1,6 @@
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/user';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sky-money-ai-skymoneyback2.dq4298.easypanel.host';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Debug: mostrar qual URL está sendo usada (apenas desenvolvimento)
 if (import.meta.env.DEV) {
