@@ -1,63 +1,34 @@
-# Multi-stage build for React app
+# Multi-stage build para otimizar o tamanho da imagem final
+
+# Stage 1: Build stage
 FROM node:20-alpine AS builder
 
-# Set working directory
+# Definir diretório de trabalho
 WORKDIR /app
 
-# Accept build arguments
-ARG VITE_API_BASE_URL=http://localhost:3000
-ARG VITE_APP_NAME="SkyMoney Frontend"
-ARG VITE_APP_VERSION=2.0
-
-# Set environment variables for build
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_APP_NAME=$VITE_APP_NAME
-ENV VITE_APP_VERSION=$VITE_APP_VERSION
-
-# Copy package files
+# Copiar arquivos de dependências
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production=false
+# Instalar dependências
+RUN npm ci --only=production
 
-# Copy source code
+# Copiar código fonte
 COPY . .
 
-# Build the app
+# Build da aplicação
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine AS production
+# Stage 2: Production stage
+FROM nginx:alpine
 
-# Copy built assets from builder stage
+# Copiar arquivos de build para o nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar configuração customizada do nginx (opcional)
+# COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 80
+# Expor porta 80
 EXPOSE 80
 
-# Start nginx
+# Comando para iniciar nginx
 CMD ["nginx", "-g", "daemon off;"]
-
-# Development stage
-FROM node:20-alpine AS development
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install all dependencies (including dev dependencies)
-RUN npm ci
-
-# Copy source code
-COPY . .
-
-# Expose port 5173 (Vite default)
-EXPOSE 5173
-
-# Start development server
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
