@@ -34,7 +34,7 @@ export default function Queue() {
   } | null>(null);
   const [isBulkRemoveModalOpen, setIsBulkRemoveModalOpen] = useState(false);
   const [isBulkConfirmModalOpen, setIsBulkConfirmModalOpen] = useState(false);
-  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
   const [bulkRemoveLoading, setBulkRemoveLoading] = useState(false);
 
   useEffect(() => {
@@ -397,7 +397,7 @@ export default function Queue() {
 
   const closeBulkRemoveModal = () => {
     setIsBulkRemoveModalOpen(false);
-    setSelectedEntries([]);
+    setSelectedPositions([]);
   };
 
   const closeBulkConfirmModal = () => {
@@ -413,18 +413,21 @@ export default function Queue() {
       let errorCount = 0;
       const errors: string[] = [];
       
-      for (const entryId of selectedEntries) {
+      for (const position of selectedPositions) {
         try {
-          await queueAPI.removeFromQueue(entryId);
-          successCount++;
+          const entry = allQueueEntries.find(e => e.position === position);
+          if (entry) {
+            await queueAPI.removeFromQueue(entry.id);
+            successCount++;
+          }
           
           // Small delay to avoid overwhelming the server
           await new Promise(resolve => setTimeout(resolve, 100));
         } catch (error: any) {
           errorCount++;
-          const entry = allQueueEntries.find(e => e.id === entryId);
+          const entry = allQueueEntries.find(e => e.position === position);
           const userName = entry?.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Usuário desconhecido';
-          errors.push(`${userName}: ${error.message || 'Erro desconhecido'}`);
+          errors.push(`Posição ${position} (${userName}): ${error.message || 'Erro desconhecido'}`);
         }
       }
       
@@ -435,20 +438,20 @@ export default function Queue() {
       if (errorCount === 0) {
         setAllocationResults({
           successCount,
-          totalAttempted: selectedEntries.length,
-          successMessage: `${successCount} usuário(s) removido(s) da fila com sucesso!`
+          totalAttempted: selectedPositions.length,
+          successMessage: `${successCount} posição(ões) removida(s) da fila com sucesso!`
         });
       } else if (successCount > 0) {
         setAllocationResults({
           successCount,
-          totalAttempted: selectedEntries.length,
-          errorMessage: `Operação parcialmente concluída. ${successCount} usuário(s) removido(s) com sucesso. Erros: ${errors.join('; ')}`
+          totalAttempted: selectedPositions.length,
+          errorMessage: `Operação parcialmente concluída. ${successCount} posição(ões) removida(s) com sucesso. Erros: ${errors.join('; ')}`
         });
       } else {
         setAllocationResults({
           successCount: 0,
-          totalAttempted: selectedEntries.length,
-          errorMessage: `Erro ao remover usuários: ${errors.join('; ')}`
+          totalAttempted: selectedPositions.length,
+          errorMessage: `Erro ao remover posições: ${errors.join('; ')}`
         });
       }
       
@@ -459,7 +462,7 @@ export default function Queue() {
       console.error('Error in bulk remove:', error);
       setAllocationResults({
         successCount: 0,
-        totalAttempted: selectedEntries.length,
+        totalAttempted: selectedPositions.length,
         errorMessage: `Erro ao processar remoção em massa: ${error.message || 'Erro desconhecido'}`
       });
       setIsResultsModalOpen(true);
@@ -468,23 +471,23 @@ export default function Queue() {
     }
   };
 
-  const handleEntrySelection = (entryId: string) => {
-    setSelectedEntries(prev => 
-      prev.includes(entryId) 
-        ? prev.filter(id => id !== entryId)
-        : [...prev, entryId]
+  const handlePositionSelection = (position: number) => {
+    setSelectedPositions(prev => 
+      prev.includes(position) 
+        ? prev.filter(pos => pos !== position)
+        : [...prev, position]
     );
   };
 
-  const handleSelectAll = () => {
-    const occupiedEntries = allQueueEntries
+  const handleSelectAllOccupied = () => {
+    const occupiedPositions = allQueueEntries
       .filter(entry => entry.user_id !== null && entry.user_id !== '')
-      .map(entry => entry.id);
+      .map(entry => entry.position);
     
-    if (selectedEntries.length === occupiedEntries.length) {
-      setSelectedEntries([]);
+    if (selectedPositions.length === occupiedPositions.length) {
+      setSelectedPositions([]);
     } else {
-      setSelectedEntries(occupiedEntries);
+      setSelectedPositions(occupiedPositions);
     }
   };
 
@@ -1486,7 +1489,7 @@ export default function Queue() {
           onClick={closeBulkRemoveModal}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -1496,7 +1499,7 @@ export default function Queue() {
                   Retirar em Massa
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Selecione os usuários que deseja remover da fila
+                  Selecione as posições ocupadas que deseja remover da fila
                 </p>
               </div>
               <button
@@ -1509,111 +1512,130 @@ export default function Queue() {
 
             {/* Modal Content */}
             <div className="p-6">
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-6 mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Selecionada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Ocupada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Receptor Ativo</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Posição Vazia</span>
+                </div>
+              </div>
+
               {/* Select All Button */}
-              <div className="mb-4">
+              <div className="mb-4 text-center">
                 <button
-                  onClick={handleSelectAll}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  onClick={handleSelectAllOccupied}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors mx-auto"
                 >
                   <input
                     type="checkbox"
-                    checked={selectedEntries.length > 0 && selectedEntries.length === allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
-                    onChange={handleSelectAll}
-                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    checked={selectedPositions.length > 0 && selectedPositions.length === allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    onChange={handleSelectAllOccupied}
+                    className="mr-2 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                   />
-                  Selecionar Todos ({allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length} usuários)
+                  Selecionar Todas as Posições Ocupadas ({allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length} posições)
                 </button>
               </div>
 
-              {/* Queue Entries List */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {allQueueEntries
-                  .filter(entry => entry.user_id !== null && entry.user_id !== '')
-                  .map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                        selectedEntries.includes(entry.id)
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                      onClick={() => handleEntrySelection(entry.id)}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedEntries.includes(entry.id)}
-                          onChange={() => handleEntrySelection(entry.id)}
-                          className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                        />
-                        
-                        <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <User className="h-5 w-5 text-gray-600" />
-                          </div>
+              {/* Slots Grid */}
+              <div className="grid grid-cols-10 gap-2 max-h-96 overflow-y-auto">
+                {Array.from({ length: MAX_QUEUE_SLOTS }, (_, index) => {
+                  const position = index + 1;
+                  const existingEntry = allQueueEntries.find(entry => entry.position === position);
+                  const isOccupied = existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '';
+                  const isReceiver = existingEntry && existingEntry.is_receiver;
+                  const isSelected = selectedPositions.includes(position);
+                  
+                  if (isOccupied) {
+                    return (
+                      <button
+                        key={position}
+                        onClick={() => handlePositionSelection(position)}
+                        className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                          isSelected
+                            ? 'bg-red-100 border-red-300 hover:bg-red-200'
+                            : isReceiver 
+                              ? 'bg-blue-100 border-blue-300 hover:bg-blue-200' 
+                              : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-gray-700">
+                          {position}
                         </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">
-                              {entry.user?.firstName} {entry.user?.lastName}
-                            </h4>
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              entry.is_receiver 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {entry.is_receiver ? (
-                                <>
-                                  <Crown className="h-3 w-3 mr-1" />
-                                  RECEPTOR
-                                </>
-                              ) : (
-                                <>
-                                  <Target className="h-3 w-3 mr-1" />
-                                  ATIVO
-                                </>
-                              )}
-                            </span>
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                              Posição {entry.position}
-                            </span>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
+                        </div>
+                        {existingEntry.user && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {existingEntry.user.firstName}
                           </div>
-                          
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                              <span className="truncate">{entry.user?.email}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                              <span>Adicionado em {formatDate(entry.created_at)}</span>
-                            </div>
+                        )}
+                        {isSelected && (
+                          <div className="text-xs text-red-600 mt-1 font-bold">
+                            SELECIONADA
                           </div>
+                        )}
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={position}
+                        className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
+                      >
+                        <div className="text-xs font-bold text-green-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          VAZIA
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  }
+                })}
               </div>
 
-              {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length === 0 && (
-                <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    Nenhum usuário na fila
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Não há usuários ocupando posições na fila no momento.
-                  </p>
+              {/* Summary */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {selectedPositions.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Selecionadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-600">
+                      {allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Ocupadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {MAX_QUEUE_SLOTS - allQueueEntries.filter(entry => entry.user_id !== null && entry.user_id !== '').length}
+                    </div>
+                    <div className="text-sm text-gray-600">Posições Vazias</div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Modal Footer */}
             <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gray-50">
               <div className="text-sm text-gray-600">
-                {selectedEntries.length > 0 && (
-                  <span>{selectedEntries.length} usuário(s) selecionado(s)</span>
+                {selectedPositions.length > 0 && (
+                  <span>{selectedPositions.length} posição(ões) selecionada(s)</span>
                 )}
               </div>
               <div className="flex space-x-3">
@@ -1626,11 +1648,11 @@ export default function Queue() {
                 </button>
                 <button
                   onClick={() => setIsBulkConfirmModalOpen(true)}
-                  disabled={selectedEntries.length === 0 || bulkRemoveLoading}
+                  disabled={selectedPositions.length === 0 || bulkRemoveLoading}
                   className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Remover Selecionados ({selectedEntries.length})
+                  Remover Selecionadas ({selectedPositions.length})
                 </button>
               </div>
             </div>
@@ -1669,7 +1691,7 @@ export default function Queue() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Remover {selectedEntries.length} usuário(s)
+                    Remover {selectedPositions.length} posição(ões)
                   </h3>
                   <p className="text-sm text-gray-600">
                     Esta ação não pode ser desfeita
@@ -1677,9 +1699,34 @@ export default function Queue() {
                 </div>
               </div>
               
-              <p className="text-gray-700 mb-6">
-                Tem certeza que deseja remover {selectedEntries.length} usuário(s) da fila? Esta ação não pode ser desfeita.
+              <p className="text-gray-700 mb-4">
+                Tem certeza que deseja remover {selectedPositions.length} posição(ões) da fila? Esta ação não pode ser desfeita.
               </p>
+
+              {/* Selected Positions List */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Posições selecionadas:</h4>
+                <div className="max-h-32 overflow-y-auto bg-gray-50 rounded-md p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPositions.map(position => {
+                      const entry = allQueueEntries.find(e => e.position === position);
+                      return (
+                        <span
+                          key={position}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                        >
+                          Posição {position}
+                          {entry?.user && (
+                            <span className="ml-1 text-red-600">
+                              ({entry.user.firstName})
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
               
               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                 <div className="flex">
