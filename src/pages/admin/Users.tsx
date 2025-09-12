@@ -162,11 +162,90 @@ export default function Users() {
     reader.readAsDataURL(file);
   };
 
+  const validateUserData = (data: Partial<UserType>) => {
+    // Common regex patterns (same as register page)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{11}$/;
+    const cepRegex = /^\d{8}$/;
+
+    // Validate required fields
+    if (!data.firstName || !data.lastName || !data.email || !data.phone || !data.cpf || !data.birthDate) {
+      throw new Error('Por favor, preencha todos os campos obrigatórios');
+    }
+
+    // Validate CPF format
+    if (data.cpf && data.cpf.length !== 11) {
+      throw new Error('CPF deve ter 11 dígitos');
+    }
+
+    // Validate email format
+    if (data.email && !emailRegex.test(data.email)) {
+      throw new Error('Por favor, insira um email válido');
+    }
+
+    // Validate phone format (Brazilian phone)
+    if (data.phone && !phoneRegex.test(data.phone.replace(/\D/g, ''))) {
+      throw new Error('Por favor, insira um telefone válido (11 dígitos)');
+    }
+
+    // Validate birth date (must be 18+)
+    if (data.birthDate) {
+      const birthDate = new Date(data.birthDate);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 18) {
+        throw new Error('Usuário deve ter pelo menos 18 anos');
+      }
+    }
+
+    // Validate CEP format
+    if (data.cep && !cepRegex.test(data.cep.replace(/\D/g, ''))) {
+      throw new Error('CEP deve ter 8 dígitos');
+    }
+
+    // Validate PIX key based on type
+    if (data.pixKeyType && data.pixKey) {
+      if (data.pixKeyType === 'email' && !emailRegex.test(data.pixKey)) {
+        throw new Error('Chave PIX deve ser um email válido');
+      }
+      if (data.pixKeyType === 'phone' && !phoneRegex.test(data.pixKey.replace(/\D/g, ''))) {
+        throw new Error('Chave PIX deve ser um telefone válido (11 dígitos)');
+      }
+      if (data.pixKeyType === 'cpf' && !/^\d{11}$/.test(data.pixKey.replace(/\D/g, ''))) {
+        throw new Error('Chave PIX deve ser um CPF válido (11 dígitos)');
+      }
+    }
+
+    // Validate Bitcoin address if provided
+    if (data.btcAddress) {
+      const btcRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$/;
+      if (!btcRegex.test(data.btcAddress)) {
+        throw new Error('Endereço Bitcoin inválido');
+      }
+    }
+
+    // Validate USDT address if provided
+    if (data.usdtAddress) {
+      const usdtRegex = /^0x[a-fA-F0-9]{40}$/;
+      if (!usdtRegex.test(data.usdtAddress)) {
+        throw new Error('Endereço USDT inválido');
+      }
+    }
+
+    // Validate password if provided
+    if (data.password && data.password.length < 6) {
+      throw new Error('A senha deve ter pelo menos 6 caracteres');
+    }
+  };
+
   const handleSaveUser = async () => {
     if (!editingUser) return;
 
     try {
       setEditLoading(true);
+      
+      // Validate the form data using same rules as registration
+      validateUserData(editFormData);
       
       // Prepare the update data - exclude fields that shouldn't be sent to backend
       const updateData = { ...editFormData };
@@ -185,8 +264,10 @@ export default function Users() {
       setAllUsers(updatedUsers);
       
       closeEditModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user:', error);
+      // Show validation error to user
+      alert(error.message || 'Erro ao atualizar usuário');
     } finally {
       setEditLoading(false);
     }
@@ -1150,14 +1231,10 @@ export default function Users() {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Função</label>
-                      <select
-                        value={editFormData.role || ''}
-                        onChange={(e) => handleInputChange('role', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="user">Usuário</option>
-                        <option value="admin">Administrador</option>
-                      </select>
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600">
+                        {editFormData.role?.toUpperCase() || 'USER'}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">A função do usuário não pode ser alterada</p>
                     </div>
 
                     <div>
