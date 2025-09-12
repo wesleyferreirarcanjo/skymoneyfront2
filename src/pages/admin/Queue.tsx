@@ -325,7 +325,7 @@ export default function Queue() {
       // Check if position already exists with a valid user
       const existingEntry = allQueueEntries.find(entry => entry.position === position);
       if (existingEntry && existingEntry.user_id !== null && existingEntry.user_id !== '') {
-        alert(`Erro: A posição ${position} já está ocupada por ${existingEntry.user?.firstName || 'um usuário'}.`);
+        alert(`Erro: A posição ${formatPosition(position)} já está ocupada por ${existingEntry.user?.firstName || 'um usuário'}.`);
         setAddLoading(false);
         return;
       }
@@ -333,7 +333,7 @@ export default function Queue() {
       // Check if user is already in queue
       const userInQueue = allQueueEntries.find(entry => entry.user_id === userId);
       if (userInQueue) {
-        alert(`Erro: O usuário já está na fila na posição ${userInQueue.position}.`);
+        alert(`Erro: O usuário já está na fila na posição ${formatPosition(userInQueue.position)}.`);
         setAddLoading(false);
         return;
       }
@@ -440,7 +440,7 @@ export default function Queue() {
           errorCount++;
           const entry = allQueueEntries.find(e => e.position === position);
           const userName = entry?.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'Usuário desconhecido';
-          errors.push(`Posição ${position} (${userName}): ${error.message || 'Erro desconhecido'}`);
+          errors.push(`Posição ${formatPosition(position)} (${userName}): ${error.message || 'Erro desconhecido'}`);
         }
       }
       
@@ -616,7 +616,7 @@ export default function Queue() {
       setAllocationResults({
         successCount: 1,
         totalAttempted: 1,
-        successMessage: `Posições trocadas com sucesso! ${firstEntry.user?.firstName} (posição ${firstPosition}) ↔ ${secondEntry.user?.firstName} (posição ${secondPosition})`
+        successMessage: `Posições trocadas com sucesso! ${firstEntry.user?.firstName} (posição ${formatPosition(firstPosition)}) ↔ ${secondEntry.user?.firstName} (posição ${formatPosition(secondPosition)})`
       });
       setIsResultsModalOpen(true);
       closeSwapModal();
@@ -1348,7 +1348,7 @@ export default function Queue() {
                         }`}
                       >
                         <div className="text-xs font-bold text-gray-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
@@ -1382,7 +1382,7 @@ export default function Queue() {
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 hover:bg-green-200 hover:border-green-400 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="text-xs font-bold text-green-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-green-600 mt-1">
                           {hasNullUser ? 'VAGA VAZIA' : 'DISPONÍVEL'}
@@ -1480,7 +1480,7 @@ export default function Queue() {
                        )}
                      </span>
                     <span className="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
-                      Posição {selectedEntry.position}
+                      Posição {formatPosition(selectedEntry.position)}
                     </span>
                   </div>
                 </div>
@@ -1520,7 +1520,7 @@ export default function Queue() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Posição na Fila</label>
-                      <p className="text-sm text-gray-900">{selectedEntry.position}</p>
+                      <p className="text-sm text-gray-900">{formatPosition(selectedEntry.position)}</p>
                     </div>
                      <div>
                        <label className="text-sm font-medium text-gray-500">Status</label>
@@ -1762,7 +1762,7 @@ export default function Queue() {
                         }`}
                       >
                         <div className="text-xs font-bold text-gray-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
@@ -1786,7 +1786,7 @@ export default function Queue() {
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
                       >
                         <div className="text-xs font-bold text-green-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-green-600 mt-1">
                           VAZIA
@@ -1928,7 +1928,7 @@ export default function Queue() {
                             key={position}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
                           >
-                            Posição {position} - {entry?.user?.firstName}
+                            Posição {formatPosition(position)} - {entry?.user?.firstName}
                           </span>
                         );
                       })}
@@ -1960,7 +1960,7 @@ export default function Queue() {
                         }`}
                       >
                         <div className="text-xs font-bold text-gray-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
@@ -1984,7 +1984,7 @@ export default function Queue() {
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
                       >
                         <div className="text-xs font-bold text-green-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-green-600 mt-1">
                           VAZIA
@@ -2144,7 +2144,7 @@ export default function Queue() {
                         }`}
                       >
                         <div className="text-xs font-bold text-gray-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
@@ -2168,7 +2168,7 @@ export default function Queue() {
                         className="p-3 rounded-lg border-2 border-green-300 bg-green-100 text-center opacity-50"
                       >
                         <div className="text-xs font-bold text-green-700">
-                          {position}
+                          {formatPosition(position)}
                         </div>
                         <div className="text-xs text-green-600 mt-1">
                           VAZIA
@@ -2288,7 +2288,7 @@ export default function Queue() {
                           key={position}
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"
                         >
-                          Posição {position}
+                          Posição {formatPosition(position)}
                           {entry?.user && (
                             <span className="ml-1 text-red-600">
                               ({entry.user.firstName})
