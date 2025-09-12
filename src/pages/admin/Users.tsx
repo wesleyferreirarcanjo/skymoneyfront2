@@ -624,15 +624,12 @@ export default function Users() {
                                 <Eye className="w-3 h-3 mr-1" />
                                 Ver Perfil
                               </button>
-                              {userData.role.toLowerCase() !== 'admin' && (
+                              {userData.role.toLowerCase() !== 'admin' && !userData.adminApproved && (
                                 <button
                                   onClick={() => handleVerifyUser(userData.id)}
-                                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                    userData.adminApproved
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  }`}
+                                  className="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-blue-100 text-blue-800 hover:bg-blue-200"
                                 >
+                                  Verificar
                                 </button>
                               )}
                               <button
