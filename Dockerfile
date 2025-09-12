@@ -21,21 +21,24 @@ RUN npm run build
 # Stage 2: Production stage
 FROM nginx:alpine
 
+# Instalar envsubst para substituição de variáveis de ambiente
+RUN apk add --no-cache gettext
+
 # Copiar arquivos de build para o nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar configuração customizada do nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copiar template do nginx e script de inicialização
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY start.sh /start.sh
 
-# Argumentos de build para configurar a API externa
-ARG API_BACKEND_URL
-ENV API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skymoneyback2.dq4298.easypanel.host}
+# Tornar script executável
+RUN chmod +x /start.sh
 
-# Substituir a URL da API no nginx.conf (garantir que termine com /)
-RUN sed -i "s|SUA_URL_EXTERNA_AQUI|${API_BACKEND_URL%/}/|g" /etc/nginx/nginx.conf
+# Variável de ambiente para URL do backend (será definida em runtime)
+ENV API_BACKEND_URL=https://sky-money-ai-skymoneyback2.dq4298.easypanel.host
 
 # Expor porta 80
 EXPOSE 80
 
-# Comando para iniciar nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Usar script de inicialização em vez do nginx direto
+CMD ["/start.sh"]
