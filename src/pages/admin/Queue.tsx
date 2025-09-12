@@ -68,6 +68,8 @@ export default function Queue() {
   };
 
   const filterQueueEntries = () => {
+    console.log('🔍 filterQueueEntries called with allQueueEntries:', allQueueEntries.length);
+    
     // Create combined list of all users (in queue and waiting)
     const usersInQueue = allQueueEntries
       .filter(entry => entry.user_id !== null && entry.user_id !== '')
@@ -80,6 +82,19 @@ export default function Queue() {
         // Only include entries that have a valid user_id AND a valid user object
         const hasValidUserId = entry.user_id !== null && entry.user_id !== '';
         const hasUser = entry.user !== null && entry.user !== undefined;
+        
+        // Debug logging for position 14 specifically
+        if (entry.position === 14) {
+          console.log('🔍 Position 14 debug:', {
+            position: entry.position,
+            user_id: entry.user_id,
+            user: entry.user,
+            hasValidUserId,
+            hasUser,
+            willInclude: hasValidUserId && hasUser
+          });
+        }
+        
         return hasValidUserId && hasUser;
       })
       .map(entry => ({
@@ -89,6 +104,8 @@ export default function Queue() {
         entry: entry,
         status: entry.is_receiver ? 'receiver' : 'active'
       }));
+    
+    console.log('🔍 queueItems after filtering:', queueItems.length, queueItems.map(q => ({ position: q.entry.position, user: q.user?.firstName })));
     
     // Create display items for empty queue slots (with null or empty user_id)
     const emptySlots = allQueueEntries
@@ -116,10 +133,17 @@ export default function Queue() {
     // Apply user filter
     if (userFilter === 'in-queue') {
       // Show only occupied queue entries (users actually in the queue)
+      console.log('🔍 Applying in-queue filter, queueItems:', queueItems.length);
       allItems = queueItems;
     } else if (userFilter === 'waiting') {
       allItems = waitingItems;
     }
+    
+    console.log('🔍 Final allItems after filter:', allItems.length, allItems.map(item => ({ 
+      type: item.type, 
+      position: item.entry?.position, 
+      user: item.user?.firstName 
+    })));
     
     // Apply search filter
     if (searchTerm.trim()) {
@@ -143,6 +167,12 @@ export default function Queue() {
     const endIndex = startIndex + entriesPerPage;
     const paginatedItems = allItems.slice(startIndex, endIndex);
 
+    console.log('🔍 Setting queueEntries to:', paginatedItems.length, paginatedItems.map(item => ({ 
+      type: item.type, 
+      position: item.entry?.position, 
+      user: item.user?.firstName 
+    })));
+    
     setQueueEntries(paginatedItems);
     setTotalEntries(allItems.length);
     setTotalPages(Math.ceil(allItems.length / entriesPerPage));
