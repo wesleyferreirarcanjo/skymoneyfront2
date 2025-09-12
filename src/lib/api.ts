@@ -1,6 +1,12 @@
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/user';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+
+// Debug: mostrar qual URL está sendo usada (apenas desenvolvimento)
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔗 API Base URL:', API_BASE_URL);
+  console.log('🔗 Usando REACT_APP_API_URL?', !!process.env.REACT_APP_API_URL);
+}
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
