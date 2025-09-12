@@ -6,27 +6,10 @@ import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/admin/Dashboard';
 import UserHome from './pages/users/Home';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  
-  // Mostrar loading enquanto verifica autenticação
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-skymoney-teal-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
-}
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -37,21 +20,21 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
-  if (user.role !== 'admin') {
+
+  if (user.role?.toLowerCase() !== 'admin') {
     return <Navigate to="/home" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
 function UserRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -62,21 +45,21 @@ function UserRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
-  if (user.role === 'admin') {
+
+  if (user.role?.toLowerCase() === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
 function RoleBasedRedirect() {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -87,15 +70,15 @@ function RoleBasedRedirect() {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
-  if (user.role === 'admin') {
+
+  if (user.role?.toLowerCase() === 'admin') {
     return <Navigate to="/admin/dashboard" replace />;
   }
-  
+
   return <Navigate to="/home" replace />;
 }
 
@@ -106,7 +89,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
+
           {/* Admin Routes */}
           <Route
             path="/admin/dashboard"
@@ -116,7 +99,7 @@ function App() {
               </AdminRoute>
             }
           />
-          
+
           {/* User Routes */}
           <Route
             path="/home"
@@ -126,9 +109,9 @@ function App() {
               </UserRoute>
             }
           />
-          
 
-          
+
+
           {/* Root redirect */}
           <Route path="/" element={<RoleBasedRedirect />} />
         </Routes>

@@ -82,7 +82,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         token: action.payload.token,
         isLoading: false,
         isAuthenticated: true,
-        isAdmin: action.payload.user.role === 'admin' || action.payload.user.email === 'admin@skymoney.com',
+        isAdmin: action.payload.user.role?.toLowerCase() === 'admin' || action.payload.user.email === 'admin@skymoney.com',
         error: null,
       };
     case 'AUTH_FAILURE':
@@ -107,7 +107,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         user: action.payload,
-        isAdmin: action.payload.role === 'admin' || action.payload.email === 'admin@skymoney.com',
+        isAdmin: action.payload.role?.toLowerCase() === 'admin' || action.payload.email === 'admin@skymoney.com',
       };
     case 'CLEAR_ERROR':
       return {
