@@ -15,17 +15,17 @@ export default function AdminLayout() {
   // Get current view from URL path
   const getCurrentView = (): AdminView => {
     const path = location.pathname;
-    if (path.includes('/users')) return 'users';
-    if (path.includes('/settings')) return 'settings';
+    if (path.includes('/admin/users')) return 'users';
+    if (path.includes('/admin/settings')) return 'settings';
     return 'dashboard';
   };
   
   const activeView = getCurrentView();
 
   const menuItems = [
-    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3, path: '/dashboard' },
-    { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon, path: '/dashboard/users' },
-    { id: 'settings' as AdminView, label: 'Configurações', icon: Settings, path: '/dashboard/settings' },
+    { id: 'dashboard' as AdminView, label: 'Dashboard', icon: BarChart3, path: '/admin/dashboard' },
+    { id: 'users' as AdminView, label: 'Usuários', icon: UsersIcon, path: '/admin/users' },
+    { id: 'settings' as AdminView, label: 'Configurações', icon: Settings, path: '/admin/settings' },
   ];
 
   const handleMenuClick = (item: typeof menuItems[0]) => {

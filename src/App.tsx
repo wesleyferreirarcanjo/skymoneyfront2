@@ -78,9 +78,9 @@ function UserRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isUserAdmin(user)) {
-    console.log('🔄 UserRoute: User is admin, redirecting to /dashboard');
+    console.log('🔄 UserRoute: User is admin, redirecting to /admin/dashboard');
     console.log('🏠 ===== USER ROUTE CHECK END (REDIRECT) =====');
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   console.log('✅ UserRoute: User is regular user, allowing access to home');
@@ -119,9 +119,9 @@ function RoleBasedRedirect() {
   }
 
   if (isUserAdmin(user)) {
-    console.log('🎯 RoleBasedRedirect: ✅ ADMIN USER - Redirecting to /dashboard');
+    console.log('🎯 RoleBasedRedirect: ✅ ADMIN USER - Redirecting to /admin/dashboard');
     console.log('🚀 ===== ROLE-BASED REDIRECT END (ADMIN) =====');
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   console.log('🏠 RoleBasedRedirect: ✅ REGULAR USER - Redirecting to /home');
@@ -139,7 +139,7 @@ function App() {
 
           {/* Admin Routes */}
           <Route
-            path="/dashboard"
+            path="/admin/dashboard"
             element={
               <AdminRoute>
                 <AdminLayout />
@@ -147,7 +147,7 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/users"
+            path="/admin/users"
             element={
               <AdminRoute>
                 <AdminLayout />
@@ -155,7 +155,7 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/settings"
+            path="/admin/settings"
             element={
               <AdminRoute>
                 <AdminLayout />

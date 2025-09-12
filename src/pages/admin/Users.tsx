@@ -995,10 +995,10 @@ export default function Users() {
 
               {/* Modal Content */}
               <div className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Personal Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Pessoais</h3>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Informações Pessoais</h3>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
@@ -1106,8 +1106,8 @@ export default function Users() {
                   </div>
 
                   {/* Address Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Endereço</h3>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Endereço</h3>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
@@ -1141,8 +1141,9 @@ export default function Users() {
                   </div>
 
                   {/* Banking Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações Bancárias</h3>
+                  <div className="lg:col-span-2 space-y-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Informações Bancárias</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Banco</label>
@@ -1172,6 +1173,7 @@ export default function Users() {
                         onChange={(e) => handleInputChange('account', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
                     </div>
                   </div>
 
@@ -1244,6 +1246,34 @@ export default function Users() {
                         onChange={(e) => handleInputChange('pixOwnerName', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">PIX Copia e Cola</label>
+                      <div className="relative">
+                        <textarea
+                          id="pixCopyPaste"
+                          value={editFormData.pixCopyPaste || ''}
+                          onChange={(e) => handleInputChange('pixCopyPaste', e.target.value)}
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={3}
+                          placeholder="Cole aqui o seu código PIX Copia e Cola"
+                        />
+                        {editFormData.pixCopyPaste && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToClipboard(editFormData.pixCopyPaste || '', 'pixCopyPaste')}
+                            className="absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar PIX Copia e Cola"
+                          >
+                            {copiedField === 'pixCopyPaste' ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>
