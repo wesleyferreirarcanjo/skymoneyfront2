@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { queueAPI, authAPI } from '../../lib/api';
 import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target } from 'lucide-react';
-import { QueueEntry, User as UserType, CreateQueueEntryRequest } from '../../types/user';
+import { QueueEntry, CreateQueueEntryRequest } from '../../types/queue';
+import { User as UserType } from '../../types/user';
 
 export default function Queue() {
   const [queueEntries, setQueueEntries] = useState<any[]>([]);

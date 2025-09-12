@@ -1,4 +1,6 @@
-import { AuthResponse, LoginRequest, RegisterRequest, QueueEntry, CreateQueueEntryRequest, UpdateQueueEntryRequest, ReorderQueueRequest } from '../types/user';
+import { AuthResponse, LoginRequest } from '../types/auth';
+import { RegisterRequest } from '../types/user';
+import { QueueEntry, CreateQueueEntryRequest, UpdateQueueEntryRequest, ReorderQueueRequest } from '../types/queue';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
