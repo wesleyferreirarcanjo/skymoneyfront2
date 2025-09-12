@@ -134,24 +134,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = localStorage.getItem('user');
 
         if (token && userData) {
-          const user = JSON.parse(userData);
-          dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
-
-          // Refresh profile to get latest data
+          // Verificar se o token ainda é válido fazendo uma requisição para o perfil
           try {
             const response = await authAPI.getProfile();
             if (response.success) {
-              dispatch({ type: 'UPDATE_USER', payload: response.data });
+              // Token válido, atualizar dados do usuário
+              dispatch({ type: 'AUTH_SUCCESS', payload: { user: response.data, token } });
               localStorage.setItem('user', JSON.stringify(response.data));
+            } else {
+              // Token inválido, limpar dados
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('user');
+              dispatch({ type: 'SET_LOADING', payload: false });
             }
           } catch (error) {
-            console.error('Failed to refresh profile:', error);
+            console.error('Token validation failed:', error);
+            // Token inválido ou erro de rede, limpar dados
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            dispatch({ type: 'SET_LOADING', payload: false });
           }
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
+        // Em caso de erro, limpar dados e parar loading
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
