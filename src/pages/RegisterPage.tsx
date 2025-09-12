@@ -479,7 +479,7 @@ export default function RegisterPage() {
 
         <div className="space-y-2">
           <Label>Banco</Label>
-          <Select name="bank" onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank}>
+          <Select onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione seu banco" />
             </SelectTrigger>
@@ -520,7 +520,7 @@ export default function RegisterPage() {
 
         <div className="space-y-2">
           <Label>Tipo da Chave PIX</Label>
-          <Select name="pixKeyType" onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType}>
+          <Select onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo da chave" />
             </SelectTrigger>
@@ -967,7 +967,7 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Progress value={progress} className="w-full [&>div]:bg-[#3A92A8]" />
               <div className="flex justify-between text-xs text-muted-foreground">
-                {stepTitles.map((title, index) => (
+                {stepTitles.map((_title, index) => (
                   <span
                     key={index}
                     className={`${index + 1 <= currentStep ? 'text-skymoney-teal-600 font-medium' : ''}`}
