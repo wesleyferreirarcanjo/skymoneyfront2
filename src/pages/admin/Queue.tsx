@@ -825,21 +825,26 @@ export default function Queue() {
         </div>
       </div>
 
-      {/* Add to Queue Modal */}
+      {/* Allocation Modal */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={closeAddModal}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl max-w-md w-full"
+            className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
-                Criar Vaga Vazia
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Alocação de Vagas
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Selecione uma vaga disponível para criar uma nova posição na fila
+                </p>
+              </div>
               <button
                 onClick={closeAddModal}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -849,20 +854,99 @@ export default function Queue() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-4">
+            <div className="p-6">
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-6 mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Vaga Disponível</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Vaga Ocupada</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                  <span className="text-sm text-gray-600">Receptor Ativo</span>
+                </div>
+              </div>
 
+              {/* Slots Grid */}
+              <div className="grid grid-cols-10 gap-2 max-h-96 overflow-y-auto">
+                {Array.from({ length: MAX_QUEUE_SLOTS }, (_, index) => {
+                  const position = index + 1;
+                  const existingEntry = allQueueEntries.find(entry => entry.position === position);
+                  const isOccupied = existingEntry && existingEntry.user_id !== null;
+                  const isReceiver = existingEntry && existingEntry.is_receiver;
+                  
+                  if (isOccupied) {
+                    return (
+                      <div
+                        key={position}
+                        className={`p-3 rounded-lg border-2 text-center ${
+                          isReceiver 
+                            ? 'bg-blue-100 border-blue-300' 
+                            : 'bg-gray-200 border-gray-300'
+                        }`}
+                      >
+                        <div className="text-xs font-bold text-gray-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {isReceiver ? 'RECEPTOR' : 'OCUPADA'}
+                        </div>
+                        {existingEntry.user && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {existingEntry.user.firstName}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <button
+                        key={position}
+                        onClick={() => {
+                          setSelectedPosition(position);
+                          confirmAddToQueue();
+                        }}
+                        disabled={addLoading}
+                        className="p-3 rounded-lg border-2 border-green-300 bg-green-100 hover:bg-green-200 hover:border-green-400 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="text-xs font-bold text-green-700">
+                          {position}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          DISPONÍVEL
+                        </div>
+                      </button>
+                    );
+                  }
+                })}
+              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posição na Fila
-                </label>
-                <input
-                  type="number"
-                  value={selectedPosition}
-                  onChange={(e) => setSelectedPosition(parseInt(e.target.value) || 1)}
-                  min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              {/* Summary */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {MAX_QUEUE_SLOTS - getOccupiedSlotsCount()}
+                    </div>
+                    <div className="text-sm text-gray-600">Vagas Disponíveis</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-600">
+                      {getOccupiedSlotsCount()}
+                    </div>
+                    <div className="text-sm text-gray-600">Vagas Ocupadas</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {allQueueEntries.filter(e => e.is_receiver).length}
+                    </div>
+                    <div className="text-sm text-gray-600">Receptores Ativos</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -874,20 +958,6 @@ export default function Queue() {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Cancelar
-              </button>
-              <button
-                onClick={confirmAddToQueue}
-                disabled={addLoading}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {addLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Criando...
-                  </>
-                ) : (
-                  'Criar Vaga'
-                )}
               </button>
             </div>
           </div>
