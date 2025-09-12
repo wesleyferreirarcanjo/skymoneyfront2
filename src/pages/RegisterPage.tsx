@@ -482,9 +482,9 @@ export default function RegisterPage() {
           <h3 className="text-lg font-semibold text-gray-800">Informações Bancárias</h3>
           
           <div className="space-y-2">
-            <Label>Banco</Label>
-            <Select onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank}>
-              <SelectTrigger>
+            <Label htmlFor="bank">Banco</Label>
+            <Select onValueChange={(value) => handleSelectChange('bank', value)} value={formData.bank || ""}>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione seu banco" />
               </SelectTrigger>
               <SelectContent>
@@ -528,9 +528,9 @@ export default function RegisterPage() {
           <h3 className="text-lg font-semibold text-gray-800">Informações PIX</h3>
           
           <div className="space-y-2">
-            <Label>Tipo da Chave PIX</Label>
-            <Select onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType}>
-              <SelectTrigger>
+            <Label htmlFor="pixKeyType">Tipo da Chave PIX</Label>
+            <Select onValueChange={(value) => handleSelectChange('pixKeyType', value)} value={formData.pixKeyType || ""}>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione o tipo da chave" />
               </SelectTrigger>
               <SelectContent>
