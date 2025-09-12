@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X } from 'lucide-react';
+import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -178,6 +178,12 @@ export default function Users() {
     // Could open a modal or navigate to edit page
   };
 
+  const handleViewProfile = (userId: string) => {
+    // TODO: Implement view profile functionality
+    console.log('Viewing profile:', userId);
+    // Could open a modal or navigate to profile page
+  };
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -255,12 +261,17 @@ export default function Users() {
                     Lista de Usuários
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Mostrando {((currentPage - 1) * usersPerPage) + 1} a {Math.min(currentPage * usersPerPage, totalUsers)} de {totalUsers} usuários
+                    {totalUsers > 0 
+                      ? `Mostrando ${((currentPage - 1) * usersPerPage) + 1} a ${Math.min(currentPage * usersPerPage, totalUsers)} de ${totalUsers} usuários`
+                      : 'Nenhum usuário para exibir'
+                    }
                   </p>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Página {currentPage} de {totalPages}
-                </div>
+                {totalPages > 0 && (
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -274,8 +285,23 @@ export default function Users() {
                 {users.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum usuário encontrado</h3>
-                    <p className="mt-1 text-sm text-gray-500">Não há usuários cadastrados no sistema.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                      {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {searchTerm 
+                        ? `Não foram encontrados usuários para "${searchTerm}". Tente uma busca diferente.`
+                        : 'Não há usuários cadastrados no sistema.'
+                      }
+                    </p>
+                    {searchTerm && (
+                      <button
+                        onClick={clearSearch}
+                        className="mt-4 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                      >
+                        Limpar busca
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid gap-4">
@@ -342,6 +368,14 @@ export default function Users() {
 
                             {/* Action Buttons */}
                             <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewProfile(userData.id)}
+                                className="flex items-center px-3 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
+                                title="Ver perfil completo do usuário"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                Ver Perfil
+                              </button>
                               {userData.role.toLowerCase() !== 'admin' && (
                                 <button
                                   onClick={() => handleVerifyUser(userData.id)}
