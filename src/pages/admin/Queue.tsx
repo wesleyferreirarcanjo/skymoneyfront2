@@ -19,9 +19,7 @@ export default function Queue() {
   const [selectedEntry, setSelectedEntry] = useState<QueueEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [availableUsers, setAvailableUsers] = useState<UserType[]>([]);
   const [allApprovedUsers, setAllApprovedUsers] = useState<UserType[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedPosition, setSelectedPosition] = useState<number>(1);
   const [addLoading, setAddLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -64,11 +62,9 @@ export default function Queue() {
       );
       console.log('✅ Approved users:', approvedUsers);
       setAllApprovedUsers(approvedUsers);
-      setAvailableUsers(approvedUsers);
     } catch (error) {
       console.error('❌ Error fetching approved users:', error);
       setAllApprovedUsers([]);
-      setAvailableUsers([]);
     }
   };
 
@@ -184,20 +180,17 @@ export default function Queue() {
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    setSelectedUserId('');
     setSelectedPosition(1);
   };
 
   const confirmAddToQueue = async () => {
-    if (!selectedUserId) return;
-
     try {
       setAddLoading(true);
       
       const newEntry: CreateQueueEntryRequest = {
         position: selectedPosition,
         donation_number: 0,
-        user_id: selectedUserId,
+        user_id: null, // Empty slot
         is_receiver: false,
         passed_user_ids: []
       };
@@ -742,7 +735,6 @@ export default function Queue() {
                             ) : (
                               <button
                                 onClick={() => {
-                                  setSelectedUserId(item.user.id);
                                   setIsAddModalOpen(true);
                                 }}
                                 className="flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors bg-blue-100 text-blue-800 hover:bg-blue-200"
@@ -846,7 +838,7 @@ export default function Queue() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                Adicionar à Fila
+                Criar Vaga Vazia
               </h2>
               <button
                 onClick={closeAddModal}
@@ -858,23 +850,6 @@ export default function Queue() {
 
             {/* Modal Content */}
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Usuário
-                </label>
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Selecione um usuário</option>
-                  {availableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
 
 
               <div>
@@ -902,16 +877,16 @@ export default function Queue() {
               </button>
               <button
                 onClick={confirmAddToQueue}
-                disabled={addLoading || !selectedUserId}
+                disabled={addLoading}
                 className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {addLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Adicionando...
+                    Criando...
                   </>
                 ) : (
-                  'Adicionar à Fila'
+                  'Criar Vaga'
                 )}
               </button>
             </div>

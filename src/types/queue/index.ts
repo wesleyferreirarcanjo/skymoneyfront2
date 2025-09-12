@@ -19,7 +19,7 @@ export interface QueueEntry {
 export interface CreateQueueEntryRequest {
   position: number;
   donation_number: number;
-  user_id: string;
+  user_id: string | null;
   is_receiver: boolean;
   passed_user_ids: string[];
 }
