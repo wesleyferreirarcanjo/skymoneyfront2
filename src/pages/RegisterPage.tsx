@@ -300,7 +300,7 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, termsAccepted, ...registerData } = formData;
       await register(registerData);
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       // Error is handled by the auth context
     } finally {

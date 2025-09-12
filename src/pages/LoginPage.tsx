@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { login, error, clearError } = useAuth();
   const navigate = useNavigate();
 
@@ -25,8 +25,8 @@ export default function LoginPage() {
     try {
       console.log('🚀 Attempting login with:', { email, password });
       await login(email, password);
-      console.log('✅ Login successful, navigating to dashboard');
-      navigate('/dashboard');
+      console.log('✅ Login successful, navigating based on role');
+      navigate('/');
     } catch (error) {
       console.log('❌ Login failed in component:', error);
       // Error is handled by the auth context
@@ -36,15 +36,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{backgroundColor: '#499291'}}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#499291' }}>
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-4xl">
           {/* Logo */}
           <div className="text-center mb-8">
             <div className="w-48 h-48 mx-auto mb-4">
-              <img 
-                src="/main%20icon.jpg" 
-                alt="SkyMoney Logo" 
+              <img
+                src="/main%20icon.jpg"
+                alt="SkyMoney Logo"
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -63,7 +63,7 @@ export default function LoginPage() {
                 Entre com suas credenciais para acessar sua conta
               </CardDescription>
             </CardHeader>
-            
+
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 {error && (
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full"
-                  style={{backgroundColor: '#3A92A8', backgroundImage: 'none'}}
+                  style={{ backgroundColor: '#3A92A8', backgroundImage: 'none' }}
                   disabled={isLoading}
                 >
                   {isLoading ? 'Entrando...' : 'Entrar'}
@@ -136,7 +136,7 @@ export default function LoginPage() {
                       Criar conta
                     </Link>
                   </p>
-                  
+
                   <p className="text-xs text-muted-foreground">
                     Admin? Use: admin@skymoney.com / admin123456
                   </p>
@@ -151,11 +151,11 @@ export default function LoginPage() {
               <div className="h-40 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 flex flex-col items-center justify-center shadow-lg p-4">
                 <div className="flex justify-center mb-3">
                   <svg width="40" height="40" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    <path d="M8 12h8"/>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    <path d="M8 12h8" />
                   </svg>
                 </div>
                 <p className="text-sm font-bold mb-2">Sistema P2P</p>
@@ -164,7 +164,7 @@ export default function LoginPage() {
               <div className="h-40 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 flex flex-col items-center justify-center shadow-lg p-4">
                 <div className="flex justify-center mb-3">
                   <svg width="40" height="40" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
                 <p className="text-sm font-bold mb-2">Avancado</p>
@@ -173,7 +173,7 @@ export default function LoginPage() {
               <div className="h-40 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 flex flex-col items-center justify-center shadow-lg p-4">
                 <div className="flex justify-center mb-3">
                   <svg width="40" height="40" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
                 </div>
                 <p className="text-sm font-bold mb-2">Seguranca Total</p>
@@ -183,9 +183,9 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
-      <footer className="py-4 text-center" style={{backgroundColor: '#499291'}}>
+      <footer className="py-4 text-center" style={{ backgroundColor: '#499291' }}>
         <p className="text-sm text-white font-medium">© 2025 SkyMoneyIA 2.0 — Todos os direitos reservados.</p>
       </footer>
     </div>
