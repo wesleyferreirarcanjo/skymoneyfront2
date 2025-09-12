@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { User, Mail, Phone, MapPin, Calendar, Edit3, Save, X, Building, Hash, Key, QrCode, CheckCircle, XCircle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Edit3, Save, X, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Profile() {
@@ -70,6 +70,16 @@ export default function Profile() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+      console.log(`${label} copiado para a área de transferência`);
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+    }
   };
 
   const handleSave = () => {
@@ -168,27 +178,7 @@ export default function Profile() {
                   {profileData?.firstName} {profileData?.lastName}
                 </h2>
                 <p className="text-gray-600">{profileData?.email}</p>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-center">
-                    {profileData?.emailVerified ? (
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={`text-xs ${profileData?.emailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                      Email {profileData?.emailVerified ? 'Verificado' : 'Não Verificado'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    {profileData?.phoneVerified ? (
-                      <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                    ) : (
-                      <XCircle className="w-4 h-4 text-red-500 mr-1" />
-                    )}
-                    <span className={`text-xs ${profileData?.phoneVerified ? 'text-green-600' : 'text-red-600'}`}>
-                      Telefone {profileData?.phoneVerified ? 'Verificado' : 'Não Verificado'}
-                    </span>
-                  </div>
+                <div className="mt-4">
                   <div className="flex items-center justify-center">
                     {profileData?.adminApproved ? (
                       <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
@@ -540,7 +530,36 @@ export default function Profile() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="text-gray-900 break-all">{profileData?.pixCopyPaste || 'Não informado'}</p>
+                      <div className="relative">
+                        <p className="text-gray-900 break-all pr-10">{profileData?.pixCopyPaste || 'Não informado'}</p>
+                        {profileData?.pixCopyPaste && (
+                          <button
+                            onClick={() => copyToClipboard(profileData.pixCopyPaste, 'PIX Copia e Cola')}
+                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar PIX"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PIX QR Code */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      QR Code PIX
+                    </label>
+                    {profileData?.pixQrCode ? (
+                      <div className="flex justify-center">
+                        <img 
+                          src={profileData.pixQrCode} 
+                          alt="QR Code PIX" 
+                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">QR Code PIX não disponível</p>
                     )}
                   </div>
                 </div>
@@ -569,7 +588,18 @@ export default function Profile() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="text-gray-900 break-all">{profileData?.btcAddress || 'Não informado'}</p>
+                      <div className="relative">
+                        <p className="text-gray-900 break-all pr-10">{profileData?.btcAddress || 'Não informado'}</p>
+                        {profileData?.btcAddress && (
+                          <button
+                            onClick={() => copyToClipboard(profileData.btcAddress, 'Endereço Bitcoin')}
+                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar Endereço Bitcoin"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -588,7 +618,57 @@ export default function Profile() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     ) : (
-                      <p className="text-gray-900 break-all">{profileData?.usdtAddress || 'Não informado'}</p>
+                      <div className="relative">
+                        <p className="text-gray-900 break-all pr-10">{profileData?.usdtAddress || 'Não informado'}</p>
+                        {profileData?.usdtAddress && (
+                          <button
+                            onClick={() => copyToClipboard(profileData.usdtAddress, 'Endereço USDT')}
+                            className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Copiar Endereço USDT"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* QR Codes Section */}
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Bitcoin QR Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      QR Code Bitcoin (BTC)
+                    </label>
+                    {profileData?.btcQrCode ? (
+                      <div className="flex justify-center">
+                        <img 
+                          src={profileData.btcQrCode} 
+                          alt="QR Code Bitcoin" 
+                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">QR Code Bitcoin não disponível</p>
+                    )}
+                  </div>
+
+                  {/* USDT QR Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      QR Code USDT
+                    </label>
+                    {profileData?.usdtQrCode ? (
+                      <div className="flex justify-center">
+                        <img 
+                          src={profileData.usdtQrCode} 
+                          alt="QR Code USDT" 
+                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-8">QR Code USDT não disponível</p>
                     )}
                   </div>
                 </div>
