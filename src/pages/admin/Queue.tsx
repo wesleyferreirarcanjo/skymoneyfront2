@@ -537,7 +537,7 @@ export default function Queue() {
       }
 
       // Call the swap API
-      const response = await fetch('/api/queue/swap', {
+      const response = await fetch('/queue/swap', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
