@@ -554,10 +554,17 @@ export default function Profile() {
                     {profileData?.pixQrCode ? (
                       <div className="flex justify-center">
                         <img 
-                          src={profileData.pixQrCode} 
+                          src={`data:image/png;base64,${profileData.pixQrCode}`} 
                           alt="QR Code PIX" 
-                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                          className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'block';
+                          }}
                         />
+                        <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                          <p className="text-gray-500 text-sm text-center">Erro ao carregar QR Code PIX</p>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-gray-500 text-center py-8">QR Code PIX não disponível</p>
@@ -645,10 +652,17 @@ export default function Profile() {
                     {profileData?.btcQrCode ? (
                       <div className="flex justify-center">
                         <img 
-                          src={profileData.btcQrCode} 
+                          src={`data:image/png;base64,${profileData.btcQrCode}`} 
                           alt="QR Code Bitcoin" 
-                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                          className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'block';
+                          }}
                         />
+                        <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                          <p className="text-gray-500 text-sm text-center">Erro ao carregar QR Code Bitcoin</p>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-gray-500 text-center py-8">QR Code Bitcoin não disponível</p>
@@ -663,10 +677,17 @@ export default function Profile() {
                     {profileData?.usdtQrCode ? (
                       <div className="flex justify-center">
                         <img 
-                          src={profileData.usdtQrCode} 
+                          src={`data:image/png;base64,${profileData.usdtQrCode}`} 
                           alt="QR Code USDT" 
-                          className="w-48 h-48 border border-gray-300 rounded-lg"
+                          className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling.style.display = 'block';
+                          }}
                         />
+                        <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                          <p className="text-gray-500 text-sm text-center">Erro ao carregar QR Code USDT</p>
+                        </div>
                       </div>
                     ) : (
                       <p className="text-gray-500 text-center py-8">QR Code USDT não disponível</p>
