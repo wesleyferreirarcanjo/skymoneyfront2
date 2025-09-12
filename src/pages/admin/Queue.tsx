@@ -259,9 +259,9 @@ export default function Queue() {
     return allQueueEntries.filter(entry => entry.user_id !== null).length;
   };
 
-  // Calculate available slots (entries with null user_id)
+  // Calculate available slots (total slots minus occupied slots)
   const getAvailableSlotsCount = () => {
-    return allQueueEntries.filter(entry => entry.user_id === null).length;
+    return getTotalSlotsCount() - getOccupiedSlotsCount();
   };
 
   // Calculate total slots (occupied + available)
@@ -302,7 +302,11 @@ export default function Queue() {
     loading, 
     allQueueEntries: allQueueEntries.length,
     allApprovedUsers: allApprovedUsers.length,
-    waitingUsers: getWaitingUsersCount()
+    waitingUsers: getWaitingUsersCount(),
+    occupiedSlots: getOccupiedSlotsCount(),
+    availableSlots: getAvailableSlotsCount(),
+    totalSlots: getTotalSlotsCount(),
+    maxSlots: MAX_QUEUE_SLOTS
   });
 
   return (
@@ -313,6 +317,9 @@ export default function Queue() {
           <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
             <p className="text-sm text-yellow-800">
               <strong>Debug:</strong> Queue component loaded. Entries: {queueEntries.length}, Loading: {loading.toString()}, All Entries: {allQueueEntries.length}, All Users: {allApprovedUsers.length}, Waiting: {getWaitingUsersCount()}
+            </p>
+            <p className="text-sm text-yellow-800 mt-2">
+              <strong>Slot Debug:</strong> Occupied: {getOccupiedSlotsCount()}, Available: {getAvailableSlotsCount()}, Total: {getTotalSlotsCount()}, Max: {MAX_QUEUE_SLOTS}
             </p>
           </div>
         )}
