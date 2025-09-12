@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { queueAPI, authAPI } from '../../lib/api';
-import { formatDate } from '../../lib/dateUtils';
 import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target } from 'lucide-react';
 import { QueueEntry, User as UserType, CreateQueueEntryRequest } from '../../types/user';
 
@@ -37,10 +36,13 @@ export default function Queue() {
   const fetchQueueEntries = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching queue entries...');
       const entries = await queueAPI.getQueueEntries();
-      setAllQueueEntries(entries);
+      console.log('✅ Queue entries fetched:', entries);
+      setAllQueueEntries(entries || []);
     } catch (error) {
-      console.error('Error fetching queue entries:', error);
+      console.error('❌ Error fetching queue entries:', error);
+      setAllQueueEntries([]);
     } finally {
       setLoading(false);
     }
@@ -48,14 +50,18 @@ export default function Queue() {
 
   const fetchAvailableUsers = async () => {
     try {
+      console.log('🔄 Fetching available users...');
       const users = await authAPI.getUsers();
+      console.log('✅ Users fetched:', users);
       // Filter only approved users (not admin and adminApproved)
       const approvedUsers = (users || []).filter(user => 
         user.role.toLowerCase() !== 'admin' && user.adminApproved
       );
+      console.log('✅ Approved users:', approvedUsers);
       setAvailableUsers(approvedUsers);
     } catch (error) {
-      console.error('Error fetching available users:', error);
+      console.error('❌ Error fetching available users:', error);
+      setAvailableUsers([]);
     }
   };
 
@@ -223,9 +229,24 @@ export default function Queue() {
     return pages;
   };
 
+  // Debug log to ensure component is rendering
+  console.log('🎯 Queue component rendering...', { 
+    queueEntries: queueEntries.length, 
+    loading, 
+    allQueueEntries: allQueueEntries.length 
+  });
+
   return (
     <div className="ml-64 p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>Debug:</strong> Queue component loaded. Entries: {queueEntries.length}, Loading: {loading.toString()}, All Entries: {allQueueEntries.length}
+            </p>
+          </div>
+        )}
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

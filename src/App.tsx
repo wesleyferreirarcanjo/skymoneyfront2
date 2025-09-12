@@ -157,6 +157,14 @@ function App() {
             }
           />
           <Route
+            path="/admin/queue"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
+          <Route
             path="/admin/settings"
             element={
               <AdminRoute>
