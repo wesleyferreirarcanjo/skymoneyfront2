@@ -323,4 +323,21 @@ export const queueAPI = {
       throw error;
     }
   },
+
+  // Swap positions between two users
+  swapPositions: async (firstUserId: string, secondUserId: string): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest('/queue/swap-positions', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          firstUserId,
+          secondUserId
+        }),
+      });
+      return result;
+    } catch (error: any) {
+      console.error('Swap positions error:', error);
+      throw error;
+    }
+  },
 };

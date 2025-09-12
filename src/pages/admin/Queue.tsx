@@ -536,23 +536,8 @@ export default function Queue() {
         throw new Error('Entradas não encontradas ou inválidas');
       }
 
-      // Call the swap API
-      const response = await fetch('/queue/swap-positions', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          firstUserId: firstEntry.user_id,
-          secondUserId: secondEntry.user_id
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao trocar posições');
-      }
+      // Call the swap API using the existing queueAPI helper
+      await queueAPI.swapPositions(firstEntry.user_id, secondEntry.user_id);
 
       // Refresh the queue data
       await fetchQueueEntries();
