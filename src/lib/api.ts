@@ -1,6 +1,6 @@
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/user';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 // Debug: mostrar qual URL está sendo usada (apenas desenvolvimento)
 if (process.env.NODE_ENV === 'development') {
