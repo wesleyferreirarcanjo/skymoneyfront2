@@ -274,20 +274,89 @@ export default function Queue() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
+        {/* Queue Status Overview */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total na Fila</p>
-                <p className="text-2xl font-bold text-gray-900">{totalEntries}</p>
-              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mr-3">Slots de Participantes</h2>
+              {totalEntries >= 100 && (
+                <div className="flex items-center text-red-600">
+                  <AlertCircle className="h-5 w-5 mr-1" />
+                  <span className="text-sm font-medium">Todos os slots estão ocupados</span>
+                </div>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-gray-900">{totalEntries}</div>
+              <div className="text-sm text-gray-600">Participantes</div>
             </div>
           </div>
-          
+
+          {/* Progress Bar Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Slots ocupados:</span>
+                  <span className="ml-2 text-lg font-bold text-gray-900">{totalEntries}/100</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {((totalEntries / 100) * 100).toFixed(1)}% ocupado
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span>0 ocupados</span>
+                <span>100 ocupados</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className={`h-3 rounded-full transition-all duration-300 ${
+                    totalEntries >= 100 
+                      ? 'bg-red-500' 
+                      : totalEntries >= 80 
+                        ? 'bg-yellow-500' 
+                        : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((totalEntries / 100) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Waiting Queue Info */}
+            {totalEntries >= 100 && (
+              <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="p-2 rounded-full bg-blue-100 mr-3">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium text-blue-800">Na fila aguardando:</span>
+                </div>
+                <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                  {Math.max(0, totalEntries - 100)} usuários
+                </div>
+              </div>
+            )}
+
+            {/* Alert Message */}
+            {totalEntries >= 100 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                  <p className="text-sm text-red-700">
+                    <strong>Nenhum slot disponível.</strong> {Math.max(0, totalEntries - 100)} usuários aguardando liberação de slots.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100">
