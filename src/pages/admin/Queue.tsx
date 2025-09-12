@@ -90,16 +90,6 @@ export default function Queue() {
         status: entry.is_receiver ? 'receiver' : 'active'
       }));
     
-    // Create display items for empty queue slots (with null or empty user_id)
-    const emptySlots = allQueueEntries
-      .filter(entry => entry.user_id === null || entry.user_id === '')
-      .map(entry => ({
-        type: 'empty-slot' as const,
-        id: entry.id,
-        user: null,
-        entry: entry,
-        status: 'empty'
-      }));
     
     // Create display items for waiting users
     const waitingItems = waitingUsers.map(user => ({
@@ -110,8 +100,8 @@ export default function Queue() {
       status: 'waiting'
     }));
     
-    // Combine all items
-    let allItems = [...queueItems, ...emptySlots, ...waitingItems];
+    // Combine all items (excluding empty slots from Todos view)
+    let allItems = [...queueItems, ...waitingItems];
     
     // Apply user filter
     if (userFilter === 'in-queue') {
@@ -120,14 +110,12 @@ export default function Queue() {
     } else if (userFilter === 'waiting') {
       allItems = waitingItems;
     }
+    // For 'all' filter, show queueItems + waitingItems (no empty slots)
     
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       allItems = allItems.filter(item => {
-        if (item.type === 'empty-slot') {
-          return `posição ${item.entry.position}`.includes(searchTerm);
-        }
         return (
           item.user &&
           (item.user.firstName.toLowerCase().includes(searchLower) ||
