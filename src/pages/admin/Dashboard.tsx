@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../lib/api';
 import { Users, BarChart3, Settings, LogOut } from 'lucide-react';
 
 interface UserStats {
@@ -17,17 +18,8 @@ export default function AdminDashboard() {
 
   const fetchUserStats = async () => {
     try {
-      const response = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserStats({ totalUsers: data.length || 0 });
-      }
+      const users = await authAPI.getUsers();
+      setUserStats({ totalUsers: users.length || 0 });
     } catch (error) {
       console.error('Error fetching user stats:', error);
     } finally {
@@ -100,7 +92,7 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Participantes</p>
+                  <p className="text-sm font-medium text-gray-600">Total de usuários</p>
                   <div className="flex items-center mt-2">
                     {loading ? (
                       <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>

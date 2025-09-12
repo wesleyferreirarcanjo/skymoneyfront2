@@ -192,4 +192,14 @@ export const authAPI = {
       throw error;
     }
   },
+
+  getUsers: async (): Promise<any[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/users');
+      return result;
+    } catch (error: any) {
+      console.error('Get users error:', error);
+      throw error;
+    }
+  },
 };
