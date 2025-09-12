@@ -422,6 +422,19 @@ export default function RegisterPage() {
   );
 
   const renderBankingInfoStep = () => {
+    const banks = [
+      'Banco do Brasil', 'Bradesco', 'Caixa Econômica Federal', 'Itaú',
+      'Santander', 'Nubank', 'Inter', 'C6 Bank', 'PicPay', 'Mercado Pago',
+      'Sicoob', 'Sicredi', 'Banrisul', 'BTG Pactual', 'Original'
+    ];
+
+    const pixKeyTypes = [
+      { value: 'phone', label: 'Celular' },
+      { value: 'email', label: 'E-mail' },
+      { value: 'cpf', label: 'CPF/CNPJ' },
+      { value: 'random', label: 'Chave Aleatória' }
+    ];
+
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-4">
