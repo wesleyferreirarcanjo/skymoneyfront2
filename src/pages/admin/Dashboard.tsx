@@ -19,7 +19,11 @@ export default function AdminDashboard() {
   const fetchUserStats = async () => {
     try {
       const users = await authAPI.getUsers();
-      setUserStats({ totalUsers: users.length || 0 });
+      // Filter out admin users - only count regular users
+      const regularUsers = users.filter(user => 
+        user.role !== 'admin' && user.role !== 'ADMIN'
+      );
+      setUserStats({ totalUsers: regularUsers.length || 0 });
     } catch (error) {
       console.error('Error fetching user stats:', error);
     } finally {
