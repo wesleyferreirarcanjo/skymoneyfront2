@@ -418,7 +418,7 @@ export default function Queue() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100">
@@ -443,20 +443,6 @@ export default function Queue() {
                 <p className="text-2xl font-bold text-gray-900">
                   {getWaitingUsersCount()}
                 </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-purple-100">
-                <Target className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Doações Ativas</p>
-                 <p className="text-2xl font-bold text-gray-900">
-                   {new Set(allQueueEntries.filter(e => e.user_id !== null).map(e => e.donation_number)).size}
-                 </p>
               </div>
             </div>
           </div>
