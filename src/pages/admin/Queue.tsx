@@ -4,7 +4,7 @@ import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, Refres
 import { QueueEntry, User as UserType, CreateQueueEntryRequest } from '../../types/user';
 
 export default function Queue() {
-  const [queueEntries, setQueueEntries] = useState<QueueEntry[]>([]);
+  const [queueEntries, setQueueEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -24,6 +24,7 @@ export default function Queue() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<QueueEntry | null>(null);
+  const [userFilter, setUserFilter] = useState<'all' | 'in-queue' | 'waiting'>('all');
 
   useEffect(() => {
     fetchQueueEntries();
@@ -32,7 +33,7 @@ export default function Queue() {
 
   useEffect(() => {
     filterQueueEntries();
-  }, [searchTerm, allQueueEntries, currentPage]);
+  }, [searchTerm, allQueueEntries, currentPage, userFilter]);
 
   const fetchQueueEntries = async () => {
     try {
@@ -69,29 +70,57 @@ export default function Queue() {
   };
 
   const filterQueueEntries = () => {
-    if (!allQueueEntries.length) return;
-
-    let filteredEntries = allQueueEntries;
-
+    // Create combined list of all users (in queue and waiting)
+    const usersInQueue = allQueueEntries.map(entry => entry.user_id);
+    const waitingUsers = allApprovedUsers.filter(user => !usersInQueue.includes(user.id));
+    
+    // Create display items for queue entries
+    const queueItems = allQueueEntries.map(entry => ({
+      type: 'queue' as const,
+      id: entry.id,
+      user: entry.user,
+      entry: entry,
+      status: entry.is_receiver ? 'receiver' : 'waiting-in-queue'
+    }));
+    
+    // Create display items for waiting users
+    const waitingItems = waitingUsers.map(user => ({
+      type: 'waiting' as const,
+      id: user.id,
+      user: user,
+      entry: null,
+      status: 'waiting'
+    }));
+    
+    // Combine all items
+    let allItems = [...queueItems, ...waitingItems];
+    
+    // Apply user filter
+    if (userFilter === 'in-queue') {
+      allItems = queueItems;
+    } else if (userFilter === 'waiting') {
+      allItems = waitingItems;
+    }
+    
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filteredEntries = filteredEntries.filter(entry => 
-        entry.user.firstName.toLowerCase().includes(searchLower) ||
-        entry.user.lastName.toLowerCase().includes(searchLower) ||
-        entry.user.email.toLowerCase().includes(searchLower) ||
-        entry.donation_number.toString().includes(searchTerm)
+      allItems = allItems.filter(item => 
+        item.user.firstName.toLowerCase().includes(searchLower) ||
+        item.user.lastName.toLowerCase().includes(searchLower) ||
+        item.user.email.toLowerCase().includes(searchLower) ||
+        (item.entry && item.entry.donation_number.toString().includes(searchTerm))
       );
     }
 
     // Apply pagination to filtered results
     const startIndex = (currentPage - 1) * entriesPerPage;
     const endIndex = startIndex + entriesPerPage;
-    const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+    const paginatedItems = allItems.slice(startIndex, endIndex);
 
-    setQueueEntries(paginatedEntries);
-    setTotalEntries(filteredEntries.length);
-    setTotalPages(Math.ceil(filteredEntries.length / entriesPerPage));
+    setQueueEntries(paginatedItems);
+    setTotalEntries(allItems.length);
+    setTotalPages(Math.ceil(allItems.length / entriesPerPage));
   };
 
   const handleSearch = (value: string) => {
@@ -451,7 +480,7 @@ export default function Queue() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
-                  Entradas na Fila
+                  Usuários
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
                   {searchTerm ? (
@@ -465,11 +494,47 @@ export default function Queue() {
                   )}
                 </p>
               </div>
-              {totalPages > 0 && (
-                <div className="text-sm text-gray-600">
-                  Página {currentPage} de {totalPages}
+              <div className="flex items-center space-x-4">
+                {/* Filter Buttons */}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setUserFilter('all')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      userFilter === 'all'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    onClick={() => setUserFilter('in-queue')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      userFilter === 'in-queue'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Na Fila
+                  </button>
+                  <button
+                    onClick={() => setUserFilter('waiting')}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      userFilter === 'waiting'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Em Espera
+                  </button>
                 </div>
-              )}
+                
+                {totalPages > 0 && (
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
