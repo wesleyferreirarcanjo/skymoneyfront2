@@ -56,9 +56,9 @@ RUN chown -R appuser:appgroup /usr/share/nginx/html && \
 # Variável de ambiente para URL do backend
 ENV API_BACKEND_URL=https://sky-money-ai-skymoneyback2.dq4298.easypanel.host
 
-# Health check para monitoramento
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
+# Gerar configuração nginx antes de mudar para usuário não-root
+RUN envsubst '${API_BACKEND_URL}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && \
+    chown nginx:nginx /etc/nginx/nginx.conf
 
 # Expor porta 80
 EXPOSE 80
@@ -67,4 +67,4 @@ EXPOSE 80
 USER nginx
 
 # Comando de inicialização
-CMD ["/start.sh"]
+CMD ["nginx", "-g", "daemon off;"]
