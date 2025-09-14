@@ -30,16 +30,15 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="ml-64 p-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-gray-600">Visão geral do sistema</p>
-          </div>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="mb-4 p-4">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p className="text-gray-600 text-sm">Visão geral do sistema</p>
+      </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 px-4">
             {/* Total Users Card */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between">
@@ -97,14 +96,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Atividade Recente</h3>
-            <div className="text-gray-500 text-center py-8">
-              Nenhuma atividade recente
-            </div>
-          </div>
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow-md p-6 mx-4 flex-1 flex flex-col">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Atividade Recente</h3>
+        <div className="text-gray-500 text-center py-8 flex-1">
+          Nenhuma atividade recente
         </div>
       </div>
+    </div>
   );
 }

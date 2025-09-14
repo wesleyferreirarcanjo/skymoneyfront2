@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI } from '../../lib/api';
-import { User, LogOut, AlertTriangle, CheckCircle } from 'lucide-react';
+import { authAPI, donationAPI } from '../../lib/api';
+import { User, LogOut, AlertTriangle, CheckCircle, DollarSign, Flag } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Profile from './Profile';
+import DonationsPage from '../DonationsPage';
+import UserReports from './UserReports';
 import { User as UserType } from '../../types/user';
 
-type UserView = 'home' | 'profile';
+type UserView = 'home' | 'donations' | 'reports' | 'profile';
 
 export default function UserLayout() {
   const { user, logout } = useAuth();
@@ -14,17 +16,25 @@ export default function UserLayout() {
   const location = useLocation();
   const [profileData, setProfileData] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [unreadReportsCount, setUnreadReportsCount] = useState(0);
 
   useEffect(() => {
     fetchProfileData();
+    checkUnreadReports();
+  }, []);
+
+  useEffect(() => {
+    // Check for unread reports every 30 seconds
+    const interval = setInterval(checkUnreadReports, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Access control: redirect non-approved users to home if they try to access restricted routes
   useEffect(() => {
     if (profileData && !profileData.adminApproved) {
       const currentPath = location.pathname;
-      // Only allow access to /home and /profile for non-approved users
-      if (currentPath !== '/home' && currentPath !== '/profile') {
+      // Only allow access to /home, /donations and /profile for non-approved users
+      if (currentPath !== '/home' && currentPath !== '/donations' && currentPath !== '/profile') {
         navigate('/home');
       }
     }
@@ -41,11 +51,25 @@ export default function UserLayout() {
       setLoading(false);
     }
   };
+
+  const checkUnreadReports = async () => {
+    try {
+      // Check for pending reports (not resolved)
+      const reportsData = await donationAPI.getUserReports(1, 100, false);
+      const unreadCount = reportsData.data.filter(report => !report.report_resolved).length;
+      setUnreadReportsCount(unreadCount);
+    } catch (error) {
+      console.error('Error checking unread reports:', error);
+      setUnreadReportsCount(0);
+    }
+  };
   
   // Get current view from URL path
   const getCurrentView = (): UserView => {
     const path = location.pathname;
     if (path.includes('/profile')) return 'profile';
+    if (path.includes('/donations')) return 'donations';
+    if (path.includes('/reports')) return 'reports';
     return 'home';
   };
   
@@ -53,6 +77,8 @@ export default function UserLayout() {
 
   const menuItems = [
     { id: 'home' as UserView, label: 'Início', icon: User, path: '/home' },
+    { id: 'donations' as UserView, label: 'Doações', icon: DollarSign, path: '/donations' },
+    { id: 'reports' as UserView, label: 'Reports', icon: Flag, path: '/reports' },
     { id: 'profile' as UserView, label: 'Perfil', icon: User, path: '/profile' },
   ];
 
@@ -108,22 +134,40 @@ export default function UserLayout() {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="text-center py-12">
                   <h2 className="text-xl font-semibold text-gray-600 mb-4">
-                    {profileData?.adminApproved 
-                      ? 'Conteúdo em desenvolvimento' 
-                      : 'Acesso Limitado'
-                    }
+                    Bem-vindo ao SkyMoney! 🎉
                   </h2>
-                  <p className="text-gray-500">
-                    {profileData?.adminApproved 
-                      ? 'Em breve, novas funcionalidades estarão disponíveis aqui.'
-                      : 'Aguarde a aprovação do administrador para acessar todas as funcionalidades.'
-                    }
+                  <p className="text-gray-500 mb-6">
+                    Use o menu lateral para acessar suas doações, reports e perfil.
                   </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto">
+                    <div className="text-center">
+                      <div className="bg-blue-100 rounded-full p-3 w-12 h-12 mx-auto mb-2">
+                        <span className="text-blue-600 font-bold">💰</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-700">Doações</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="bg-green-100 rounded-full p-3 w-12 h-12 mx-auto mb-2">
+                        <span className="text-green-600 font-bold">📊</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-700">Reports</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="bg-purple-100 rounded-full p-3 w-12 h-12 mx-auto mb-2">
+                        <span className="text-purple-600 font-bold">👤</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-700">Perfil</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         );
+      case 'donations':
+        return <DonationsPage />;
+      case 'reports':
+        return <UserReports />;
       case 'profile':
         return <Profile />;
       default:
@@ -169,14 +213,19 @@ export default function UserLayout() {
                 <li key={item.id}>
                   <button
                     onClick={() => handleMenuClick(item)}
-                    className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors ${
+                    className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-colors relative ${
                       activeView === item.id
                         ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.id === 'reports' as UserView && unreadReportsCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+                        {unreadReportsCount > 99 ? '99+' : unreadReportsCount}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}

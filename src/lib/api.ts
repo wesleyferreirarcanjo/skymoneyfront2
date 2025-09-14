@@ -1,14 +1,22 @@
 import { AuthResponse, LoginRequest } from '../types/auth';
 import { RegisterRequest } from '../types/user';
 import { QueueEntry, CreateQueueEntryRequest, UpdateQueueEntryRequest, ReorderQueueRequest } from '../types/queue';
+import {
+  Donation,
+  DonationStats,
+  DonationHistory,
+  SendComprovanteRequest,
+  ConfirmDonationRequest,
+  ComprovanteUrlResponse,
+  DonationReportRequest,
+  DonationReportResponse,
+  DonationReport,
+  ReportResolutionRequest,
+  ReportResolutionResponse
+} from '../types/donation';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Debug: mostrar qual URL está sendo usada (apenas desenvolvimento)
-if (import.meta.env.DEV) {
-  console.log('🔗 API Base URL:', API_BASE_URL);
-  console.log('🔗 Usando VITE_API_URL?', !!import.meta.env.VITE_API_URL);
-}
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
@@ -98,7 +106,6 @@ export const authAPI = {
       // Se já estiver no formato correto, retornar como está
       return result;
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   },
@@ -134,7 +141,6 @@ export const authAPI = {
       // Se já estiver no formato correto, retornar como está
       return result;
     } catch (error) {
-      console.error('Registration error:', error);
       throw error;
     }
   },
@@ -144,7 +150,6 @@ export const authAPI = {
       const result = await makeAuthenticatedRequest('/users/profile');
       return result;
     } catch (error: any) {
-      console.error('Get profile error:', error);
       throw error;
     }
   },
@@ -156,7 +161,6 @@ export const authAPI = {
         body: JSON.stringify({ code }),
       });
     } catch (error) {
-      console.error('Email verification error:', error);
       throw error;
     }
   },
@@ -168,7 +172,6 @@ export const authAPI = {
         body: JSON.stringify({ code }),
       });
     } catch (error) {
-      console.error('Phone verification error:', error);
       throw error;
     }
   },
@@ -179,7 +182,6 @@ export const authAPI = {
         method: 'POST',
       });
     } catch (error) {
-      console.error('Resend email verification error:', error);
       throw error;
     }
   },
@@ -190,7 +192,6 @@ export const authAPI = {
         method: 'POST',
       });
     } catch (error) {
-      console.error('Resend phone verification error:', error);
       throw error;
     }
   },
@@ -200,7 +201,6 @@ export const authAPI = {
       const result = await makeAuthenticatedRequest('/users');
       return result;
     } catch (error: any) {
-      console.error('Get users error:', error);
       throw error;
     }
   },
@@ -213,7 +213,6 @@ export const authAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Update user error:', error);
       throw error;
     }
   },
@@ -225,7 +224,295 @@ export const authAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Approve user error:', error);
+      throw error;
+    }
+  },
+};
+
+// Reports list response
+export interface ReportsListResponse {
+  data: DonationReport[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
+}
+
+export interface ReportsStats {
+  totalReports: number;
+  pendingReports: number;
+  investigatingReports: number;
+  resolvedReports: number;
+  dismissedReports: number;
+}
+
+export const donationAPI = {
+  // Get donations stats
+  getDonationStats: async (): Promise<DonationStats> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/stats');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Get donations to send (A Fazer)
+  getDonationsToSend: async (): Promise<Donation[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/to-send');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Get donations to receive (A Receber)
+  getDonationsToReceive: async (): Promise<Donation[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/to-receive');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Get donation history
+  getDonationHistory: async (page: number = 1, limit: number = 20): Promise<DonationHistory> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/history?page=${page}&limit=${limit}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Send comprovante for donation
+  sendComprovante: async (data: SendComprovanteRequest): Promise<{ message: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('comprovante', data.comprovanteFile);
+
+      const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/comprovante`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Don't set Content-Type for FormData, let browser set it with boundary
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Confirm donation receipt
+  confirmDonation: async (data: ConfirmDonationRequest): Promise<{ message: string }> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/confirm`, {
+        method: 'PATCH',
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Get donation comprovante URL
+  getComprovanteUrl: async (donationId: string): Promise<ComprovanteUrlResponse> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/${donationId}/comprovante`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Report donation not received
+  reportDonation: async (donationId: string, data: DonationReportRequest): Promise<DonationReportResponse> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/${donationId}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Admin endpoints
+  getAllDonations: async (page: number = 1, limit: number = 20, status?: string, searchParams?: any): Promise<DonationHistory> => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(status && { status }),
+        ...(searchParams?.donorId && { donorId: searchParams.donorId }),
+        ...(searchParams?.receiverId && { receiverId: searchParams.receiverId }),
+        ...(searchParams?.id && { id: searchParams.id })
+      });
+      const result = await makeAuthenticatedRequest(`/admin/donations/list?${params}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Get donation details by ID
+  getDonationDetails: async (donationId: string): Promise<Donation> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/admin/donations/${donationId}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  getDonationsStats: async (): Promise<{
+    totalDonations: number;
+    pendingPayment: number;
+    pendingConfirmation: number;
+    confirmed: number;
+    expired: number;
+    cancelled: number;
+    totalAmount: number;
+  }> => {
+    try {
+      const result = await makeAuthenticatedRequest('/admin/donations/stats');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Admin reports endpoints
+  getReports: async (page: number = 1, limit: number = 20, filters?: {
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    reporterId?: string;
+    donationId?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    type?: string;
+  }): Promise<ReportsListResponse> => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(filters?.status && { status: filters.status }),
+        ...(filters?.dateFrom && { dateFrom: filters.dateFrom }),
+        ...(filters?.dateTo && { dateTo: filters.dateTo }),
+        ...(filters?.reporterId && { reporterId: filters.reporterId }),
+        ...(filters?.donationId && { donationId: filters.donationId }),
+        ...(filters?.minAmount && { minAmount: filters.minAmount.toString() }),
+        ...(filters?.maxAmount && { maxAmount: filters.maxAmount.toString() }),
+        ...(filters?.type && { type: filters.type })
+      });
+
+      const result = await makeAuthenticatedRequest(`/admin/donations/reports?${params}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+
+
+  getReportDetails: async (reportId: string): Promise<DonationReport> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/admin/donations/reports/${reportId}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  getReportsStats: async (filters?: {
+    dateFrom?: string;
+    dateTo?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    donorId?: string;
+    receiverId?: string;
+    type?: string;
+  }): Promise<ReportsStats> => {
+    try {
+      const params = new URLSearchParams();
+
+      // Adicionar filtros conforme documentação da API
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+      if (filters?.minAmount) params.append('minAmount', filters.minAmount.toString());
+      if (filters?.maxAmount) params.append('maxAmount', filters.maxAmount.toString());
+      if (filters?.donorId) params.append('donorId', filters.donorId);
+      if (filters?.receiverId) params.append('receiverId', filters.receiverId);
+      if (filters?.type) params.append('type', filters.type);
+
+      const queryString = params.toString();
+      const url = queryString ? `/admin/donations/reports/stats?${queryString}` : '/admin/donations/reports/stats';
+
+      const result = await makeAuthenticatedRequest(url);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  updateReportStatus: async (reportId: string, status: 'PENDING' | 'INVESTIGATING' | 'RESOLVED' | 'DISMISSED', notes?: string): Promise<{ message: string }> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/admin/donations/reports/${reportId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, notes }),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  resolveReport: async (donationId: string, data: ReportResolutionRequest): Promise<ReportResolutionResponse> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/admin/donations/reports/${donationId}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // User reports endpoints
+  getUserReports: async (page: number = 1, limit: number = 20, resolved?: boolean): Promise<ReportsListResponse> => {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (resolved !== undefined) {
+        params.append('resolved', resolved.toString());
+      }
+
+      const result = await makeAuthenticatedRequest(`/donations/reports?${params}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  getUserReportDetails: async (reportId: string): Promise<DonationReport> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/reports/${reportId}`);
+      return result;
+    } catch (error: any) {
       throw error;
     }
   },
@@ -238,7 +525,6 @@ export const queueAPI = {
       const result = await makeAuthenticatedRequest('/queue');
       return result;
     } catch (error: any) {
-      console.error('Get queue entries error:', error);
       throw error;
     }
   },
@@ -252,7 +538,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Add to queue error:', error);
       throw error;
     }
   },
@@ -266,7 +551,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Update queue entry error:', error);
       throw error;
     }
   },
@@ -279,7 +563,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Set receiver error:', error);
       throw error;
     }
   },
@@ -292,7 +575,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Next receiver error:', error);
       throw error;
     }
   },
@@ -306,7 +588,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Reorder queue error:', error);
       throw error;
     }
   },
@@ -319,7 +600,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Remove from queue error:', error);
       throw error;
     }
   },
@@ -336,7 +616,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Swap positions error:', error);
       throw error;
     }
   },
@@ -353,7 +632,6 @@ export const queueAPI = {
       });
       return result;
     } catch (error: any) {
-      console.error('Move user to end error:', error);
       throw error;
     }
   },

@@ -5,7 +5,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import { AdminLayout } from './pages/admin';
 import UserHome from './pages/users/Home';
-import Profile from './pages/users/Profile';
 import UserLayout from './pages/users/UserLayout';
 import { User } from './types/user';
 
@@ -172,6 +171,22 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/donations"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          />
 
           {/* User Routes */}
           <Route
@@ -183,7 +198,23 @@ function App() {
             }
           />
           <Route
+            path="/donations"
+            element={
+              <UserRoute>
+                <UserLayout />
+              </UserRoute>
+            }
+          />
+          <Route
             path="/profile"
+            element={
+              <UserRoute>
+                <UserLayout />
+              </UserRoute>
+            }
+          />
+          <Route
+            path="/reports"
             element={
               <UserRoute>
                 <UserLayout />
