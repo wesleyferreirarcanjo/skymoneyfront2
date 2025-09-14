@@ -6,12 +6,12 @@ import RegisterPage from './pages/RegisterPage';
 import { AdminLayout } from './pages/admin';
 import UserHome from './pages/users/Home';
 import UserLayout from './pages/users/UserLayout';
-import { User } from './types/user';
+import { User, UserRole } from './types/user';
 
 // Utility function to check if user is admin
 const isUserAdmin = (user: User | null): boolean => {
   if (!user) return false;
-  return user.role?.toLowerCase() === 'admin' || user.email === 'admin@skymoney.com';
+  return user.role === UserRole.ADMIN || user.email === 'admin@skymoney.com';
 };
 
 

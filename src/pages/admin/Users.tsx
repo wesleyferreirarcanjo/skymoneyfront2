@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
 import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
-import { User as UserType } from '../../types/user';
+import { User as UserType, UserRole, UserStatus } from '../../types/user';
 
 export default function Users() {
   const [users, setUsers] = useState<UserType[]>([]);
@@ -64,8 +64,8 @@ export default function Users() {
 
     // Apply unverified filter
     if (showUnverifiedOnly) {
-      filteredUsers = filteredUsers.filter(user => 
-        user.role.toLowerCase() !== 'admin' && !user.adminApproved
+      filteredUsers = filteredUsers.filter(user =>
+        user.role !== UserRole.ADMIN && !user.adminApproved
       );
     }
 
@@ -99,10 +99,10 @@ export default function Users() {
   };
 
   const getRoleBadgeColor = (role: string) => {
-    switch (role.toLowerCase()) {
-      case 'admin':
+    switch (role) {
+      case UserRole.ADMIN:
         return 'bg-red-100 text-red-800';
-      case 'user':
+      case UserRole.USER:
         return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -110,15 +110,18 @@ export default function Users() {
   };
 
   const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
+    switch (status) {
+      case UserStatus.ACTIVE:
+      case UserStatus.ACTIVE_PARTICIPANT:
         return 'bg-green-100 text-green-800';
-      case 'pending':
+      case UserStatus.PENDING:
         return 'bg-yellow-100 text-yellow-800';
-      case 'suspended':
+      case UserStatus.SUSPENDED:
         return 'bg-orange-100 text-orange-800';
-      case 'blocked':
-        return 'bg-red-100 text-red-800';
+      case UserStatus.APPROVED:
+        return 'bg-blue-100 text-blue-800';
+      case UserStatus.INACTIVE:
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -603,12 +606,12 @@ export default function Users() {
                           {/* Verification & Actions */}
                           <div className="flex flex-col items-end space-y-3">
                             {/* Verification Status */}
-                            <div className={`flex items-center text-sm ${userData.role.toLowerCase() === 'admin' || userData.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`flex items-center text-sm ${userData.role === UserRole.ADMIN || userData.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
                               <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0">
-                                <div className={`w-2 h-2 rounded-full ${userData.role.toLowerCase() === 'admin' || userData.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${userData.role === UserRole.ADMIN || userData.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
                               </div>
                               <span className="text-xs">
-                                {userData.role.toLowerCase() === 'admin' ? 'Admin (Verificado)' : userData.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
+                                {userData.role === UserRole.ADMIN ? 'Admin (Verificado)' : userData.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
                               </span>
                             </div>
 
@@ -622,7 +625,7 @@ export default function Users() {
                                 <Eye className="w-3 h-3 mr-1" />
                                 Ver Perfil
                               </button>
-                              {userData.role.toLowerCase() !== 'admin' && !userData.adminApproved && (
+                              {userData.role !== UserRole.ADMIN && !userData.adminApproved && (
                                 <button
                                   onClick={() => handleVerifyUser(userData.id)}
                                   className="px-3 py-1 text-xs font-medium rounded-md transition-colors bg-blue-100 text-blue-800 hover:bg-blue-200"
@@ -774,10 +777,10 @@ export default function Users() {
 
                       {/* Verification Status */}
                       <div className="space-y-2">
-                        <div className={`flex items-center justify-center ${selectedUser.role.toLowerCase() === 'admin' || selectedUser.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
-                          <div className={`w-3 h-3 rounded-full mr-2 ${selectedUser.role.toLowerCase() === 'admin' || selectedUser.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <div className={`flex items-center justify-center ${selectedUser.role === UserRole.ADMIN || selectedUser.adminApproved ? 'text-green-600' : 'text-red-600'}`}>
+                          <div className={`w-3 h-3 rounded-full mr-2 ${selectedUser.role === UserRole.ADMIN || selectedUser.adminApproved ? 'bg-green-500' : 'bg-red-500'}`}></div>
                           <span className="text-sm font-medium">
-                            {selectedUser.role.toLowerCase() === 'admin' ? 'Admin (Verificado)' : selectedUser.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
+                            {selectedUser.role === UserRole.ADMIN ? 'Admin (Verificado)' : selectedUser.adminApproved ? 'Aprovado pelo admin' : 'Não aprovado pelo admin'}
                           </span>
                         </div>
                       </div>

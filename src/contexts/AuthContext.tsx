@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
 import { authAPI } from '../lib/api';
-import { User } from '../types/user';
+import { User, UserRole } from '../types/user';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -38,7 +38,6 @@ interface AuthContextType extends AuthState {
     btcQrCode?: string;
     usdtAddress?: string;
     usdtQrCode?: string;
-    avatar?: string;
   }) => Promise<void>;
   logout: () => void;
   verifyEmail: (code: string) => Promise<void>;
@@ -83,7 +82,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         token: action.payload.token,
         isLoading: false,
         isAuthenticated: true,
-        isAdmin: action.payload.user.role?.toLowerCase() === 'admin' || action.payload.user.email === 'admin@skymoney.com',
+        isAdmin: action.payload.user.role === UserRole.ADMIN || action.payload.user.email === 'admin@skymoney.com',
         error: null,
       };
     case 'AUTH_FAILURE':
@@ -108,7 +107,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         user: action.payload,
-        isAdmin: action.payload.role?.toLowerCase() === 'admin' || action.payload.email === 'admin@skymoney.com',
+        isAdmin: action.payload.role === UserRole.ADMIN || action.payload.email === 'admin@skymoney.com',
       };
     case 'CLEAR_ERROR':
       return {
@@ -274,7 +273,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     btcQrCode?: string;
     usdtAddress?: string;
     usdtQrCode?: string;
-    avatar?: string;
   }) => {
     try {
       dispatch({ type: 'AUTH_START' });

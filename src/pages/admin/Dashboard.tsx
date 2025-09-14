@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
 import { Users, BarChart3 } from 'lucide-react';
+import { UserRole } from '../../types/user';
 
 interface UserStats {
   totalUsers: number;
@@ -18,8 +19,8 @@ export default function AdminDashboard() {
     try {
       const users = await authAPI.getUsers();
       // Filter out admin users - only count regular users
-      const regularUsers = users.filter(user => 
-        user.role !== 'admin' && user.role !== 'ADMIN'
+      const regularUsers = users.filter(user =>
+        user.role !== UserRole.ADMIN
       );
       setUserStats({ totalUsers: regularUsers.length || 0 });
     } catch (error) {

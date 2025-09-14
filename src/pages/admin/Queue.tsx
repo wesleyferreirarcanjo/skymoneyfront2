@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { queueAPI, authAPI } from '../../lib/api';
 import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target } from 'lucide-react';
 import { QueueEntry, CreateQueueEntryRequest } from '../../types/queue';
-import { User as UserType } from '../../types/user';
+import { User as UserType, UserRole } from '../../types/user';
 
 // Maximum number of slots available in the queue
 const MAX_QUEUE_SLOTS = 100;
@@ -80,8 +80,8 @@ export default function Queue() {
       const users = await authAPI.getUsers();
       console.log('✅ Users fetched:', users);
       // Filter only approved users (not admin and adminApproved)
-      const approvedUsers = (users || []).filter(user => 
-        user.role.toLowerCase() !== 'admin' && user.adminApproved
+      const approvedUsers = (users || []).filter(user =>
+        user.role !== UserRole.ADMIN && user.adminApproved
       );
       console.log('✅ Approved users:', approvedUsers);
       setAllApprovedUsers(approvedUsers);
