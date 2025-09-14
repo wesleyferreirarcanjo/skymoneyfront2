@@ -1,0 +1,69 @@
+# Docker Production Setup
+
+Este Dockerfile está otimizado para deployment em produção da aplicação SkyMoney IA 2.0.
+
+## Características de Produção
+
+- **Multi-stage build**: Separa build e runtime para imagem menor
+- **Usuário não-root**: Executa como usuário nginx para segurança
+- **Health checks**: Monitoramento automático da saúde do container
+- **Cache otimizado**: Estratégia de cache eficiente para builds mais rápidos
+- **Configuração dinâmica**: Suporte a variáveis de ambiente em runtime
+
+## Como usar
+
+### Build da imagem
+```bash
+docker build -t skymoney-front-prod .
+```
+
+### Executar o container
+```bash
+docker run -d \
+  --name skymoney-app \
+  -p 80:80 \
+  -e API_BACKEND_URL=https://your-backend-api.com \
+  skymoney-front-prod
+```
+
+### Com Docker Compose (produção)
+```yaml
+version: '3.8'
+services:
+  skymoney-front:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - API_BACKEND_URL=https://your-production-backend.com
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+## Variáveis de Ambiente
+
+- `API_BACKEND_URL`: URL do backend da API (obrigatório)
+
+## Health Check
+
+O container inclui um health check automático que verifica o endpoint `/health` a cada 30 segundos.
+
+## Segurança
+
+- Executa como usuário não-root (nginx)
+- Headers de segurança configurados no nginx
+- Arquivos desnecessários removidos
+- Cache do npm limpo após build
+
+## Otimizações
+
+- Apenas dependências de produção instaladas
+- Multi-stage build reduz tamanho da imagem
+- Cache eficiente de camadas Docker
+- Gzip e Brotli compression configurados
+- Cache agressivo para assets estáticos

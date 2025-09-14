@@ -1,4 +1,4 @@
-# Multi-stage build para otimizar o tamanho da imagem final
+# Production Dockerfile - Otimizado para deployment em produção
 
 # Stage 1: Build stage
 FROM node:20-alpine AS builder
@@ -6,43 +6,65 @@ FROM node:20-alpine AS builder
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências primeiro (para melhor cache)
+# Copiar arquivos de dependências primeiro para aproveitar cache do Docker
 COPY package*.json ./
 
-# Instalar dependências (incluindo devDependencies para o build)
-# Usar --no-cache para evitar problemas de cache do npm
-RUN npm ci --no-cache --only=production=false
+# Instalar apenas dependências de produção para reduzir tamanho da imagem
+RUN npm ci --only=production --no-audit --no-fund --prefer-offline && \
+    npm cache clean --force
 
-# Copiar código fonte (após instalar dependências para melhor cache)
+# Instalar devDependencies necessárias apenas para o build
+RUN npm install --only=dev --no-audit --no-fund --prefer-offline
+
+# Copiar código fonte
 COPY . .
 
-# Limpar cache do npm antes do build
-RUN npm cache clean --force
-
 # Build da aplicação
-RUN npm run build
+RUN npm run build && \
+    npm cache clean --force
 
 # Stage 2: Production stage
-FROM nginx:alpine
+FROM nginx:alpine AS production
 
-# Instalar envsubst para substituição de variáveis de ambiente
-RUN apk add --no-cache gettext
+# Instalar ferramentas necessárias para produção
+RUN apk add --no-cache gettext curl && \
+    rm -rf /var/cache/apk/*
+
+# Criar usuário não-root para segurança
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
 
 # Copiar arquivos de build para o nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder --chown=appuser:appgroup /app/dist /usr/share/nginx/html
 
-# Copiar template do nginx e script de inicialização
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
-COPY start.sh /start.sh
+# Copiar configurações do nginx
+COPY --chown=nginx:nginx nginx.conf.template /etc/nginx/nginx.conf.template
+COPY --chown=root:root start.sh /start.sh
 
 # Tornar script executável
 RUN chmod +x /start.sh
 
-# Variável de ambiente para URL do backend (será definida em runtime)
+# Configurar permissões adequadas
+RUN chown -R appuser:appgroup /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown nginx:nginx /var/run/nginx.pid && \
+    chmod 755 /usr/share/nginx/html
+
+# Variável de ambiente para URL do backend
 ENV API_BACKEND_URL=https://sky-money-ai-skymoneyback2.dq4298.easypanel.host
+
+# Health check para monitoramento
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
 
 # Expor porta 80
 EXPOSE 80
 
-# Usar script de inicialização em vez do nginx direto
+# Mudar para usuário não-root
+USER nginx
+
+# Comando de inicialização
 CMD ["/start.sh"]

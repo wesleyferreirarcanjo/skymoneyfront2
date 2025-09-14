@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  skymoney-front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: skymoney-front-prod
+    ports:
+      - "80:80"
+    environment:
+      - API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skymoneyback2.dq4298.easypanel.host}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - skymoney-network
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /var/cache/nginx
+
+networks:
+  skymoney-network:
+    driver: bridge
+
+# Para usar com backend também
+# services:
+#   skymoney-backend:
+#     image: your-backend-image
+#     environment:
+#       - DATABASE_URL=${DATABASE_URL}
+#       - REDIS_URL=${REDIS_URL}
+#     networks:
+#       - skymoney-network
+#     depends_on:
+#       - postgres
+#       - redis
+#
+#   postgres:
+#     image: postgres:15-alpine
+#     environment:
+#       - POSTGRES_DB=skymoney
+#       - POSTGRES_USER=${DB_USER}
+#       - POSTGRES_PASSWORD=${DB_PASSWORD}
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - skymoney-network
+#
+#   redis:
+#     image: redis:7-alpine
+#     networks:
+#       - skymoney-network
+#
+# volumes:
+#   postgres_data:

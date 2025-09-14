@@ -1,39 +1,38 @@
 #!/bin/sh
 
-# Script de inicialização para processar template do nginx
-# e iniciar o nginx com a configuração correta
+# Production startup script - Optimized for production deployment
 
-echo "🚀 Iniciando aplicação SkyMoney IA 2.0..."
+echo "🚀 Starting SkyMoney IA 2.0 Production..."
 
-# Verificar se a variável de ambiente está definida
+# Check if backend URL environment variable is set
 if [ -z "$API_BACKEND_URL" ]; then
-    echo "❌ ERRO: Variável de ambiente API_BACKEND_URL não está definida!"
-    echo "   Defina a variável API_BACKEND_URL com a URL do seu backend"
-    echo "   Exemplo: API_BACKEND_URL=https://seu-backend.com"
+    echo "❌ ERROR: API_BACKEND_URL environment variable is not set!"
+    echo "   Please set API_BACKEND_URL to your backend URL"
+    echo "   Example: API_BACKEND_URL=https://your-backend.com"
     exit 1
 fi
 
-# Garantir que a URL termine com /
+# Ensure URL ends with /
 API_BACKEND_URL=$(echo "$API_BACKEND_URL" | sed 's|/*$|/|')
 
-echo "🔗 Configurando proxy para: $API_BACKEND_URL"
+echo "🔗 Configuring proxy to: $API_BACKEND_URL"
 
-# Substituir a variável no template do nginx
+# Substitute environment variable in nginx template
 envsubst '${API_BACKEND_URL}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
-echo "✅ Configuração do nginx atualizada"
+echo "✅ Nginx configuration updated"
 
-# Testar configuração do nginx
-echo "🧪 Testando configuração do nginx..."
+# Test nginx configuration
+echo "🧪 Testing nginx configuration..."
 nginx -t
 
 if [ $? -ne 0 ]; then
-    echo "❌ ERRO: Configuração do nginx inválida!"
+    echo "❌ ERROR: Invalid nginx configuration!"
     exit 1
 fi
 
-echo "✅ Configuração do nginx válida"
+echo "✅ Nginx configuration is valid"
 
-# Iniciar nginx
-echo "🌐 Iniciando nginx..."
+# Start nginx
+echo "🌐 Starting nginx..."
 exec nginx -g "daemon off;"
