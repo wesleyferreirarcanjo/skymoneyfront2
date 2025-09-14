@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { Users, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
+import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Users() {
@@ -530,7 +530,7 @@ export default function Users() {
               <div className="p-6">
                 {users.length === 0 ? (
                   <div className="text-center py-8">
-                    <Users className="mx-auto h-12 w-12 text-gray-400" />
+                    <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">
                       {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                     </h3>
