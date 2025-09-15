@@ -39,7 +39,7 @@ COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
 # Variável de ambiente para URL do backend (será definida em runtime)
-ENV API_BACKEND_URL=https://sky-money-ai-skymoneyback2.dq4298.easypanel.host
+ENV API_BACKEND_URL=https://sky-money-ai-skyback3.dq4298.easypanel.host
 
 # Expor porta 80
 EXPOSE 80

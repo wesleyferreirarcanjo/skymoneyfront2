@@ -10,7 +10,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skymoneyback2.dq4298.easypanel.host}
+      - API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skyback3.dq4298.easypanel.host}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
