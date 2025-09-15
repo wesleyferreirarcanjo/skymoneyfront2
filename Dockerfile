@@ -19,8 +19,8 @@ COPY . .
 # Limpar cache do npm antes do build
 RUN npm cache clean --force
 
-# Build da aplicação
-RUN npm run build
+# Build da aplicação (passar variáveis de ambiente)
+RUN VITE_API_URL=${API_BACKEND_URL} npm run build
 
 # Stage 2: Production stage
 FROM nginx:alpine
