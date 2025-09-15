@@ -20,7 +20,9 @@ COPY . .
 RUN npm cache clean --force
 
 # Build da aplicação (passar variáveis de ambiente)
-RUN VITE_API_URL=${API_BACKEND_URL} npm run build
+ARG API_BACKEND_URL
+ENV VITE_API_URL=${API_BACKEND_URL}
+RUN echo "Building with VITE_API_URL=${VITE_API_URL}" && npm run build
 
 # Stage 2: Production stage
 FROM nginx:alpine

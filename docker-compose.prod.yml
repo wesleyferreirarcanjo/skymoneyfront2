@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
+      args:
+        - API_BACKEND_URL=${API_BACKEND_URL:-https://sky-money-ai-skyback3.dq4298.easypanel.host}
     container_name: skymoney-front-prod
     ports:
       - "80:80"
