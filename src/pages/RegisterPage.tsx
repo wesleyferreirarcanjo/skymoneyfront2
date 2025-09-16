@@ -205,7 +205,7 @@ export default function RegisterPage() {
         break;
 
       case 2: // Banking Info
-        if (!formData.cep || !formData.address || !formData.addressNumber || !formData.bank || !formData.agency || !formData.account || !formData.pixKeyType || !formData.pixKey || !formData.pixOwnerName || !formData.pixCopyPaste || !formData.pixQrCode) {
+        if (!formData.cep || !formData.address || !formData.addressNumber || !formData.pixKeyType || !formData.pixKey || !formData.pixOwnerName || !formData.pixCopyPaste || !formData.pixQrCode) {
           setValidationError('Por favor, preencha todos os campos bancários obrigatórios');
           return false;
         }
@@ -507,7 +507,6 @@ export default function RegisterPage() {
                 placeholder="0000"
                 value={formData.agency}
                 onChange={handleChange}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -518,7 +517,6 @@ export default function RegisterPage() {
                 placeholder="00000-0"
                 value={formData.account}
                 onChange={handleChange}
-                required
               />
             </div>
           </div>
