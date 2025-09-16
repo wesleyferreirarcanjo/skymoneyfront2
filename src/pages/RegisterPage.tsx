@@ -875,12 +875,6 @@ export default function RegisterPage() {
           <h4 className="font-bold text-skymoney-teal-800 mb-2">5. Conta Administrativa (contaADM)</h4>
           <p><strong>5.1.</strong> A SkyMoneyIA 2.0 destina 2 doações de R$1.600,00 de cada participante do 3º nível para a contaADM, garantindo recursos para manutenção da estrutura administrativa.</p>
           <p><strong>5.2.</strong> Os recursos são destinados a servidores, funcionários, suporte, internet, aluguéis e demais custos operacionais.</p>
-          <p><strong>5.3.</strong> Responsável contaADM:</p>
-          <ul className="ml-4 text-xs space-y-1">
-            <li>• Nome: Graciele Souza da Silva</li>
-            <li>• Chave PIX: skymoneyia.app@gmail.com</li>
-            <li>• ID: #000</li>
-          </ul>
           <p><strong>5.4.</strong> Depósitos em contas de terceiros não serão aceitos. Quem cobrar adesão ou valores estará cometendo crime.</p>
         </div>
 
