@@ -58,16 +58,26 @@ export default function RegisterPage() {
   const { register, error, clearError } = useAuth();
   const navigate = useNavigate();
 
-  // Helper function to convert file to base64
+  // Helper function to convert file to base64 with dimension validation (max 400x400)
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
-        const result = reader.result as string;
-        // Remove the data:image/xxx;base64, prefix to get just the base64 string
-        const base64 = result.split(',')[1];
-        resolve(base64);
+        const dataUrl = reader.result as string;
+
+        // Validate image dimensions before converting
+        const img = new Image();
+        img.onload = () => {
+          if (img.width > 400 || img.height > 400) {
+            reject(new Error('IMAGE_DIMENSIONS_EXCEEDED'));
+            return;
+          }
+          const base64 = dataUrl.split(',')[1];
+          resolve(base64);
+        };
+        img.onerror = () => reject(new Error('INVALID_IMAGE'));
+        img.src = dataUrl;
       };
       reader.onerror = error => reject(error);
     });
@@ -108,7 +118,11 @@ export default function RegisterPage() {
         }));
       }).catch(error => {
         console.error('Error converting file to base64:', error);
-        setValidationError('Erro ao processar a imagem. Tente novamente.');
+        if (error instanceof Error && error.message === 'IMAGE_DIMENSIONS_EXCEEDED') {
+          setValidationError('A imagem deve ter no máximo 400x400 pixels.');
+        } else {
+          setValidationError('Erro ao processar a imagem. Tente novamente.');
+        }
       });
       return;
     }
@@ -618,6 +632,7 @@ export default function RegisterPage() {
                   Crie gratuitamente aqui
                 </a>
               </p>
+              <p className="mt-1">Tamanho máximo da imagem: 400x400 pixels.</p>
             </div>
           </div>
         </div>
@@ -675,6 +690,7 @@ export default function RegisterPage() {
                 />
               </label>
             </Button>
+            <p className="text-xs text-muted-foreground text-center">Tamanho máximo da imagem: 400x400 pixels.</p>
             {formData.btcQrCode && (
               <div className="mt-2">
                 <img
@@ -718,6 +734,7 @@ export default function RegisterPage() {
                 />
               </label>
             </Button>
+            <p className="text-xs text-muted-foreground text-center">Tamanho máximo da imagem: 400x400 pixels.</p>
             {formData.usdtQrCode && (
               <div className="mt-2">
                 <img
