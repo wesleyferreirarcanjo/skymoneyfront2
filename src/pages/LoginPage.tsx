@@ -137,9 +137,7 @@ export default function LoginPage() {
                     </Link>
                   </p>
 
-                  <p className="text-xs text-muted-foreground">
-                    Admin? Use: admin@skymoney.com / admin123456
-                  </p>
+                  
                 </div>
               </CardFooter>
             </form>
