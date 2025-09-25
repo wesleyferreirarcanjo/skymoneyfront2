@@ -63,16 +63,16 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
   };
 
   const handleConfirmReceipt = async () => {
-    if (!confirming) {
-      setConfirming(true);
-      return;
-    }
-
+    console.log('🟢 Confirm button clicked for donation:', donation.id);
     try {
+      setConfirming(true);
       setError(null);
+      console.log('🔄 Making API call to confirm donation...');
       await donationAPI.confirmDonation({ donationId: donation.id });
+      console.log('✅ Donation confirmed successfully');
       onUpdate(); // Refresh the donations list
     } catch (err: any) {
+      console.error('❌ Error confirming donation:', err);
       setError(err.message || 'Erro ao confirmar recebimento');
     } finally {
       setConfirming(false);
@@ -224,7 +224,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
                 {confirming ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {confirming === true ? 'Confirmando...' : 'Clique para confirmar'}
+                    Confirmando...
                   </>
                 ) : (
                   <>

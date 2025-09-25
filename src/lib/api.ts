@@ -305,12 +305,15 @@ export const donationAPI = {
 
   // Confirm donation receipt
   confirmDonation: async (data: ConfirmDonationRequest): Promise<{ message: string }> => {
+    console.log('🚀 API: confirmDonation called with donationId:', data.donationId);
     try {
       const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/confirm`, {
         method: 'PATCH',
       });
+      console.log('✅ API: confirmDonation successful, result:', result);
       return result;
     } catch (error: any) {
+      console.error('❌ API: confirmDonation failed:', error);
       throw error;
     }
   },
