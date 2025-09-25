@@ -11,7 +11,7 @@ interface DonationCardToReceiveProps {
 export default function DonationCardToReceive({ donation, onUpdate }: DonationCardToReceiveProps) {
   const [confirming, setConfirming] = useState(false);
   const [viewingComprovante, setViewingComprovante] = useState(false);
-  const [comprovanteUrl, setComprovanteUrl] = useState<string | null>(null);
+  const [comprovanteBase64, setComprovanteBase64] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -55,7 +55,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     try {
       setError(null);
       const result: ComprovanteUrlResponse = await donationAPI.getComprovanteUrl(donation.id);
-      setComprovanteUrl(result.comprovanteUrl);
+      setComprovanteBase64(result.comprovanteBase64);
       setViewingComprovante(true);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar comprovante');
@@ -81,7 +81,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
 
   const closeComprovanteModal = () => {
     setViewingComprovante(false);
-    setComprovanteUrl(null);
+    setComprovanteBase64(null);
   };
 
   const handleReportDonation = async () => {
@@ -301,7 +301,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
       </div>
 
       {/* Comprovante Modal */}
-      {viewingComprovante && comprovanteUrl && (
+      {viewingComprovante && comprovanteBase64 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -318,7 +318,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
 
             <div className="p-4">
               <img
-                src={comprovanteUrl}
+                src={`data:image/jpeg;base64,${comprovanteBase64}`}
                 alt="Comprovante de pagamento"
                 className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
               />

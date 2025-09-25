@@ -83,7 +83,7 @@ export interface ConfirmDonationRequest {
 }
 
 export interface ComprovanteUrlResponse {
-  comprovanteUrl: string;
+  comprovanteBase64: string;
 }
 
 export interface DonationReportRequest {
