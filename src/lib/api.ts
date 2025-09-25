@@ -291,16 +291,11 @@ export const donationAPI = {
   // Send comprovante for donation
   sendComprovante: async (data: SendComprovanteRequest): Promise<{ message: string }> => {
     try {
-      const formData = new FormData();
-      formData.append('comprovante', data.comprovanteFile);
-
       const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/comprovante`, {
         method: 'POST',
-        body: formData,
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it with boundary
-          'Authorization': `Bearer ${getAuthToken()}`,
-        },
+        body: JSON.stringify({
+          comprovanteBase64: data.comprovanteBase64
+        }),
       });
       return result;
     } catch (error: any) {

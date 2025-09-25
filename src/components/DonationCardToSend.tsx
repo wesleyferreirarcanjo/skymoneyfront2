@@ -73,6 +73,21 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
     }
   };
 
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        // Extract base64 part (remove data:image/...;base64, prefix)
+        const base64 = dataUrl.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -93,7 +108,13 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
       setUploading(true);
       setError(null);
 
-      await donationAPI.sendComprovante({ donationId: donation.id, comprovanteFile: file });
+      // Convert file to base64
+      const base64String = await fileToBase64(file);
+
+      await donationAPI.sendComprovante({ 
+        donationId: donation.id, 
+        comprovanteBase64: base64String 
+      });
 
       // Success - refresh the donations list
       onUpdate();

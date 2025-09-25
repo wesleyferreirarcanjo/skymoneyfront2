@@ -75,7 +75,7 @@ export interface CreateDonationRequest {
 
 export interface SendComprovanteRequest {
   donationId: string;
-  comprovanteFile: File;
+  comprovanteBase64: string;
 }
 
 export interface ConfirmDonationRequest {
