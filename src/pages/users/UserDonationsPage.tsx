@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { donationAPI } from '../lib/api';
-import type { Donation, DonationStats, DonationHistory } from '../types/donation';
+import { donationAPI } from '../../lib/api';
+import type { Donation, DonationStats, DonationHistory } from '../../types/donation';
 import { AlertCircle, Clock, CheckCircle, History, DollarSign } from 'lucide-react';
-import DonationCardToSend from '../components/DonationCardToSend';
-import DonationCardToReceive from '../components/DonationCardToReceive';
-import DonationHistoryComponent from '../components/DonationHistory';
+import DonationCardToSend from '../../components/DonationCardToSend';
+import DonationCardToReceive from '../../components/DonationCardToReceive';
+import DonationHistoryComponent from '../../components/DonationHistory';
 
 type TabType = 'to-send' | 'to-receive' | 'history';
 
-export default function DonationsPage() {
+export default function UserDonationsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('to-send');
   const [donationsToSend, setDonationsToSend] = useState<Donation[]>([]);
   const [donationsToReceive, setDonationsToReceive] = useState<Donation[]>([]);

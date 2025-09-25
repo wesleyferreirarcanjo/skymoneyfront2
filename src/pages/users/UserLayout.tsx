@@ -4,7 +4,7 @@ import { authAPI, donationAPI } from '../../lib/api';
 import { User, LogOut, AlertTriangle, CheckCircle, DollarSign, Flag } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Profile from './Profile';
-import DonationsPage from '../DonationsPage';
+import UserDonationsPage from './UserDonationsPage';
 import UserReports from './UserReports';
 import { User as UserType } from '../../types/user';
 
@@ -165,7 +165,7 @@ export default function UserLayout() {
           </div>
         );
       case 'donations':
-        return <DonationsPage />;
+        return <UserDonationsPage />;
       case 'reports':
         return <UserReports />;
       case 'profile':
