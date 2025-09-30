@@ -72,23 +72,29 @@ export default function AdminReports() {
       setError(null);
       setSearching(searchTerm.length > 0);
 
-      // Carregar estatísticas (backend não possui endpoint dedicado)
-      // Estratégia: fazer requisições mínimas (limit=1) por status e usar o totalItems
+      // Carregar estatísticas:
+      // - Breakdown por status via listas (limit=1) usando totalItems
+      // - Agregados via endpoint /admin/donations/reports/stats (quando disponível)
       try {
-        const [allResp, pendingResp, investigatingResp, resolvedResp, dismissedResp] = await Promise.all([
+        const [allResp, pendingResp, investigatingResp, resolvedResp, dismissedResp, aggregateResp] = await Promise.all([
           donationAPI.getReports(1, 1),
           donationAPI.getReports(1, 1, { status: 'PENDING' }),
           donationAPI.getReports(1, 1, { status: 'INVESTIGATING' }),
           donationAPI.getReports(1, 1, { status: 'RESOLVED' }),
           donationAPI.getReports(1, 1, { status: 'DISMISSED' }),
+          donationAPI.getReportsStats().catch(() => undefined),
         ]);
 
         setStats({
-          totalReports: allResp.pagination.totalItems || 0,
+          totalReports: aggregateResp?.totalReports ?? (allResp.pagination.totalItems || 0),
           pendingReports: pendingResp.pagination.totalItems || 0,
           investigatingReports: investigatingResp.pagination.totalItems || 0,
           resolvedReports: resolvedResp.pagination.totalItems || 0,
           dismissedReports: dismissedResp.pagination.totalItems || 0,
+          totalAmountReported: aggregateResp?.totalAmountReported,
+          reportsThisWeek: aggregateResp?.reportsThisWeek,
+          reportsThisMonth: aggregateResp?.reportsThisMonth,
+          averageReportAmount: aggregateResp?.averageReportAmount,
         });
       } catch (statsErr: any) {
         // Se falhar, não bloquear a página; apenas logar e seguir

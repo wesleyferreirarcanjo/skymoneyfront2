@@ -240,11 +240,18 @@ export interface ReportsListResponse {
 }
 
 export interface ReportsStats {
-  totalReports: number;
-  pendingReports: number;
-  investigatingReports: number;
-  resolvedReports: number;
-  dismissedReports: number;
+  // Status breakdown (optional if backend doesn't return)
+  pendingReports?: number;
+  investigatingReports?: number;
+  resolvedReports?: number;
+  dismissedReports?: number;
+
+  // Aggregate fields from backend stats endpoint
+  totalReports?: number;
+  totalAmountReported?: number;
+  reportsThisWeek?: number;
+  reportsThisMonth?: number;
+  averageReportAmount?: number;
 }
 
 export const donationAPI = {
@@ -466,22 +473,21 @@ export const donationAPI = {
     type?: string;
   }): Promise<ReportsStats> => {
     try {
+      // Backend supports GET /admin/donations/reports/stats with optional filters
       const params = new URLSearchParams();
-
-      // Adicionar filtros conforme documentação da API
       if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.append('dateTo', filters.dateTo);
-      if (filters?.minAmount) params.append('minAmount', filters.minAmount.toString());
-      if (filters?.maxAmount) params.append('maxAmount', filters.maxAmount.toString());
+      if (filters?.minAmount) params.append('minAmount', String(filters.minAmount));
+      if (filters?.maxAmount) params.append('maxAmount', String(filters.maxAmount));
       if (filters?.donorId) params.append('donorId', filters.donorId);
       if (filters?.receiverId) params.append('receiverId', filters.receiverId);
       if (filters?.type) params.append('type', filters.type);
 
-      const queryString = params.toString();
-      const url = queryString ? `/admin/donations/reports/stats?${queryString}` : '/admin/donations/reports/stats';
+      const query = params.toString();
+      const url = query ? `/admin/donations/reports/stats?${query}` : '/admin/donations/reports/stats';
 
       const result = await makeAuthenticatedRequest(url);
-      return result;
+      return result as ReportsStats;
     } catch (error: any) {
       throw error;
     }
