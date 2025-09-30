@@ -345,7 +345,25 @@ export const donationAPI = {
   },
 
   // Admin endpoints
-  getAllDonations: async (page: number = 1, limit: number = 20, status?: string, searchParams?: any): Promise<DonationHistory> => {
+  getAllDonations: async (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    searchParams?: {
+      donorId?: string;
+      receiverId?: string;
+      id?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      minAmount?: number;
+      maxAmount?: number;
+      type?: string;
+    }
+  ): Promise<{
+    data: Donation[];
+    pagination: { currentPage: number; totalPages: number; totalItems: number };
+    stats?: any;
+  }> => {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -353,7 +371,12 @@ export const donationAPI = {
         ...(status && { status }),
         ...(searchParams?.donorId && { donorId: searchParams.donorId }),
         ...(searchParams?.receiverId && { receiverId: searchParams.receiverId }),
-        ...(searchParams?.id && { id: searchParams.id })
+        ...(searchParams?.id && { id: searchParams.id }),
+        ...(searchParams?.dateFrom && { dateFrom: searchParams.dateFrom }),
+        ...(searchParams?.dateTo && { dateTo: searchParams.dateTo }),
+        ...(searchParams?.minAmount && { minAmount: searchParams.minAmount.toString() }),
+        ...(searchParams?.maxAmount && { maxAmount: searchParams.maxAmount.toString() }),
+        ...(searchParams?.type && { type: searchParams.type })
       });
       const result = await makeAuthenticatedRequest(`/admin/donations/list?${params}`);
       return result;
@@ -372,6 +395,7 @@ export const donationAPI = {
     }
   },
 
+  // Deprecated by list.stats but kept for backward compatibility
   getDonationsStats: async (): Promise<{
     totalDonations: number;
     pendingPayment: number;

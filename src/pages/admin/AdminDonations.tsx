@@ -68,10 +68,6 @@ export default function AdminDonations() {
       setError(null);
       setSearching(searchTerm.length > 0);
 
-      // Carregar estatísticas
-      const statsData = await donationAPI.getDonationsStats();
-      setStats(statsData);
-
       // Carregar doações baseado no filtro ativo
       let statusFilter: string | undefined;
       if (activeView !== 'all') {
@@ -113,6 +109,11 @@ export default function AdminDonations() {
 
       const donationsData = await donationAPI.getAllDonations(currentPage, pageSize, statusFilter, searchParams);
       setDonations(donationsData.data);
+
+      // Atualizar estatísticas vindas da lista (se presentes)
+      if ((donationsData as any).stats) {
+        setStats((donationsData as any).stats);
+      }
 
       // Update pagination info
       setTotalPages(donationsData.pagination.totalPages);
