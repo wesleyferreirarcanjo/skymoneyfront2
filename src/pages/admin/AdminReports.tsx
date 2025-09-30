@@ -72,9 +72,28 @@ export default function AdminReports() {
       setError(null);
       setSearching(searchTerm.length > 0);
 
-      // Carregar estatísticas
-      const statsData = await donationAPI.getReportsStats();
-      setStats(statsData);
+      // Carregar estatísticas (backend não possui endpoint dedicado)
+      // Estratégia: fazer requisições mínimas (limit=1) por status e usar o totalItems
+      try {
+        const [allResp, pendingResp, investigatingResp, resolvedResp, dismissedResp] = await Promise.all([
+          donationAPI.getReports(1, 1),
+          donationAPI.getReports(1, 1, { status: 'PENDING' }),
+          donationAPI.getReports(1, 1, { status: 'INVESTIGATING' }),
+          donationAPI.getReports(1, 1, { status: 'RESOLVED' }),
+          donationAPI.getReports(1, 1, { status: 'DISMISSED' }),
+        ]);
+
+        setStats({
+          totalReports: allResp.pagination.totalItems || 0,
+          pendingReports: pendingResp.pagination.totalItems || 0,
+          investigatingReports: investigatingResp.pagination.totalItems || 0,
+          resolvedReports: resolvedResp.pagination.totalItems || 0,
+          dismissedReports: dismissedResp.pagination.totalItems || 0,
+        });
+      } catch (statsErr: any) {
+        // Se falhar, não bloquear a página; apenas logar e seguir
+        console.warn('Falha ao calcular estatísticas de reports:', statsErr?.message || statsErr);
+      }
 
       // Carregar reports baseado no filtro ativo
       let statusFilter: string | undefined;
