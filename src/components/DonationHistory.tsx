@@ -91,6 +91,36 @@ export default function DonationHistory({ donations, loading }: DonationHistoryP
     }
   };
 
+  const getInitials = (name?: string): string => {
+    if (!name) return '';
+    const parts = name.split(' ');
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const getAvatarColor = (name?: string): string => {
+    if (!name) return 'bg-gray-500';
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -140,15 +170,17 @@ export default function DonationHistory({ donations, loading }: DonationHistoryP
               <div className="flex items-center space-x-4 flex-1">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
-                  {contactPerson?.avatarUrl ? (
+                  {contactPerson?.avatarUrl && contactPerson.avatarUrl.trim() !== '' ? (
                     <img
                       className="h-10 w-10 rounded-full object-cover"
                       src={contactPerson.avatarUrl}
                       alt={contactPerson.name}
                     />
                   ) : (
-                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                      <User className="h-5 w-5 text-gray-600" />
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAvatarColor(contactPerson?.name)}`}>
+                      <span className="text-white text-sm font-semibold">
+                        {getInitials(contactPerson?.name)}
+                      </span>
                     </div>
                   )}
                 </div>

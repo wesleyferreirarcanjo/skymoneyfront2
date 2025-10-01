@@ -51,6 +51,36 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     }
   };
 
+  const getInitials = (name?: string): string => {
+    if (!name) return '';
+    const parts = name.split(' ');
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const getAvatarColor = (name?: string): string => {
+    if (!name) return 'bg-gray-500';
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const handleViewComprovante = async () => {
     try {
       setError(null);
@@ -137,15 +167,17 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
           <div className="flex items-start space-x-4 flex-1">
             {/* Donor Avatar */}
             <div className="flex-shrink-0">
-              {donation.donor?.avatarUrl ? (
+              {donation.donor?.avatarUrl && donation.donor.avatarUrl.trim() !== '' ? (
                 <img
                   className="h-12 w-12 rounded-full object-cover"
                   src={donation.donor.avatarUrl}
                   alt={donation.donor.name}
                 />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="h-6 w-6 text-gray-600" />
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.donor?.name)}`}>
+                  <span className="text-white text-lg font-semibold">
+                    {getInitials(donation.donor?.name)}
+                  </span>
                 </div>
               )}
             </div>
