@@ -434,6 +434,34 @@ export default function Queue() {
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str || str.trim() === '') return false;
+    
+    // Check if it already has data URI prefix
+    if (str.startsWith('data:image/')) return true;
+    
+    // Check if it looks like base64
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str.replace(/\s/g, ''));
+  };
+
+  const formatAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (avatar.startsWith('data:image/')) return avatar;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(avatar)) {
+      return `data:image/png;base64,${avatar}`;
+    }
+    
+    // If it's a URL, return as is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+    
+    return null;
+  };
+
   const closeResultsModal = () => {
     setIsResultsModalOpen(false);
     setAllocationResults(null);
@@ -1073,10 +1101,10 @@ export default function Queue() {
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="flex-shrink-0">
                             {item.user && (item.type === 'queue' || item.type === 'waiting') ? (
-                              (item.user as any).avatar && (item.user as any).avatar.trim() !== '' ? (
+                              formatAvatarUrl((item.user as any).avatar) ? (
                                 <img
                                   className="h-12 w-12 rounded-full object-cover"
-                                  src={(item.user as any).avatar}
+                                  src={formatAvatarUrl((item.user as any).avatar)!}
                                   alt={`${item.user.firstName} ${item.user.lastName}`}
                                 />
                               ) : (
@@ -1649,10 +1677,10 @@ export default function Queue() {
             {/* Modal Content */}
             <div className="p-6">
               <div className="flex items-center space-x-4 mb-4">
-                {entryToDelete.user && (entryToDelete.user as any).avatar && (entryToDelete.user as any).avatar.trim() !== '' ? (
+                {formatAvatarUrl((entryToDelete.user as any)?.avatar) ? (
                   <img
                     className="w-12 h-12 rounded-full object-cover"
-                    src={(entryToDelete.user as any).avatar}
+                    src={formatAvatarUrl((entryToDelete.user as any).avatar)!}
                     alt={`${entryToDelete.user.firstName} ${entryToDelete.user.lastName}`}
                   />
                 ) : (
@@ -2453,10 +2481,10 @@ export default function Queue() {
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                {firstEntry?.user && (firstEntry.user as any).avatar && (firstEntry.user as any).avatar.trim() !== '' ? (
+                                {formatAvatarUrl((firstEntry?.user as any)?.avatar) ? (
                                   <img
                                     className="w-8 h-8 rounded-full object-cover"
-                                    src={(firstEntry.user as any).avatar}
+                                    src={formatAvatarUrl((firstEntry.user as any).avatar)!}
                                     alt={`${firstEntry.user.firstName} ${firstEntry.user.lastName}`}
                                   />
                                 ) : (
@@ -2491,10 +2519,10 @@ export default function Queue() {
                             
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                {secondEntry?.user && (secondEntry.user as any).avatar && (secondEntry.user as any).avatar.trim() !== '' ? (
+                                {formatAvatarUrl((secondEntry?.user as any)?.avatar) ? (
                                   <img
                                     className="w-8 h-8 rounded-full object-cover"
-                                    src={(secondEntry.user as any).avatar}
+                                    src={formatAvatarUrl((secondEntry.user as any).avatar)!}
                                     alt={`${secondEntry.user.firstName} ${secondEntry.user.lastName}`}
                                   />
                                 ) : (
@@ -2621,10 +2649,10 @@ export default function Queue() {
                           <div className="bg-gray-50 rounded-lg p-4">
                             <h4 className="text-sm font-medium text-gray-900 mb-3">Usuário a ser movido:</h4>
                             <div className="flex items-center space-x-3">
-                              {entry?.user && (entry.user as any).avatar && (entry.user as any).avatar.trim() !== '' ? (
+                              {formatAvatarUrl((entry?.user as any)?.avatar) ? (
                                 <img
                                   className="w-10 h-10 rounded-full object-cover"
-                                  src={(entry.user as any).avatar}
+                                  src={formatAvatarUrl((entry.user as any).avatar)!}
                                   alt={`${entry.user.firstName} ${entry.user.lastName}`}
                                 />
                               ) : (

@@ -81,6 +81,34 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str || str.trim() === '') return false;
+    
+    // Check if it already has data URI prefix
+    if (str.startsWith('data:image/')) return true;
+    
+    // Check if it looks like base64
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str.replace(/\s/g, ''));
+  };
+
+  const formatAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (avatar.startsWith('data:image/')) return avatar;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(avatar)) {
+      return `data:image/png;base64,${avatar}`;
+    }
+    
+    // If it's a URL, return as is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+    
+    return null;
+  };
+
   const handleViewComprovante = async () => {
     try {
       setError(null);
@@ -167,10 +195,10 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
           <div className="flex items-start space-x-4 flex-1">
             {/* Donor Avatar */}
             <div className="flex-shrink-0">
-              {donation.donor?.avatarUrl && donation.donor.avatarUrl.trim() !== '' ? (
+              {formatAvatarUrl(donation.donor?.avatarUrl) ? (
                 <img
                   className="h-12 w-12 rounded-full object-cover"
-                  src={donation.donor.avatarUrl}
+                  src={formatAvatarUrl(donation.donor.avatarUrl)!}
                   alt={donation.donor.name}
                 />
               ) : (

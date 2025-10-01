@@ -249,6 +249,34 @@ export default function Users() {
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str || str.trim() === '') return false;
+    
+    // Check if it already has data URI prefix
+    if (str.startsWith('data:image/')) return true;
+    
+    // Check if it looks like base64
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str.replace(/\s/g, ''));
+  };
+
+  const formatAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (avatar.startsWith('data:image/')) return avatar;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(avatar)) {
+      return `data:image/png;base64,${avatar}`;
+    }
+    
+    // If it's a URL, return as is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+    
+    return null;
+  };
+
   const validateUserData = (data: Partial<UserType>): Record<string, string> => {
     const errors: Record<string, string> = {};
     
@@ -591,10 +619,10 @@ export default function Users() {
                           {/* User Info */}
                           <div className="flex items-start space-x-4 flex-1">
                             <div className="flex-shrink-0">
-                              {userData.avatar && userData.avatar.trim() !== '' ? (
+                              {formatAvatarUrl(userData.avatar) ? (
                                 <img
                                   className="h-12 w-12 rounded-full object-cover"
-                                  src={userData.avatar}
+                                  src={formatAvatarUrl(userData.avatar)!}
                                   alt={`${userData.firstName} ${userData.lastName}`}
                                 />
                               ) : (
@@ -783,9 +811,9 @@ export default function Users() {
                   {/* User Avatar and Basic Info */}
                   <div className="lg:col-span-1">
                     <div className="text-center">
-                      {selectedUser.avatar && selectedUser.avatar.trim() !== '' ? (
+                      {formatAvatarUrl(selectedUser.avatar) ? (
                         <img
-                          src={selectedUser.avatar}
+                          src={formatAvatarUrl(selectedUser.avatar)!}
                           alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
                           className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
                         />
@@ -1551,9 +1579,9 @@ export default function Users() {
               {/* Modal Content */}
               <div className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  {userToVerify.avatar && userToVerify.avatar.trim() !== '' ? (
+                  {formatAvatarUrl(userToVerify.avatar) ? (
                     <img
-                      src={userToVerify.avatar}
+                      src={formatAvatarUrl(userToVerify.avatar)!}
                       alt={`${userToVerify.firstName} ${userToVerify.lastName}`}
                       className="w-12 h-12 rounded-full object-cover"
                     />

@@ -68,6 +68,34 @@ export default function Profile() {
     return colors[Math.abs(hash) % colors.length];
   };
 
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str || str.trim() === '') return false;
+    
+    // Check if it already has data URI prefix
+    if (str.startsWith('data:image/')) return true;
+    
+    // Check if it looks like base64
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str.replace(/\s/g, ''));
+  };
+
+  const formatAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (avatar.startsWith('data:image/')) return avatar;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(avatar)) {
+      return `data:image/png;base64,${avatar}`;
+    }
+    
+    // If it's a URL, return as is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+    
+    return null;
+  };
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
@@ -198,9 +226,9 @@ export default function Profile() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center">
                 <div className="relative inline-block">
-                  {profileData?.avatar && profileData.avatar.trim() !== '' ? (
+                  {formatAvatarUrl(profileData?.avatar) ? (
                     <div className="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
-                      <img src={profileData.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
+                      <img src={formatAvatarUrl(profileData?.avatar)!} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
                     </div>
                   ) : (
                     <div className={`w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center ${getAvatarColor(profileData?.firstName, profileData?.lastName)}`}>
