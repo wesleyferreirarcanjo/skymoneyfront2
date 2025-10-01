@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy, Camera } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy, Camera } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Profile() {
@@ -198,17 +198,17 @@ export default function Profile() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center">
                 <div className="relative inline-block">
-                  <div className="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
-                    {profileData?.avatar ? (
+                  {profileData?.avatar && profileData.avatar.trim() !== '' ? (
+                    <div className="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
                       <img src={profileData.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
-                    ) : (
-                      <div className={`w-full h-full ${getAvatarColor(profileData?.firstName, profileData?.lastName)} flex items-center justify-center`}>
-                        <span className="text-white text-4xl font-semibold">
-                          {getInitials(profileData?.firstName, profileData?.lastName)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className={`w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center ${getAvatarColor(profileData?.firstName, profileData?.lastName)}`}>
+                      <span className="text-white text-4xl font-semibold">
+                        {getInitials(profileData?.firstName, profileData?.lastName)}
+                      </span>
+                    </div>
+                  )}
                   
                   {/* Upload Avatar Button */}
                   <button
@@ -434,7 +434,7 @@ export default function Profile() {
                       <p className="text-gray-900 break-all pr-10">{profileData?.pixCopyPaste || 'Não informado'}</p>
                       {profileData?.pixCopyPaste && (
                         <button
-                          onClick={() => copyToClipboard(profileData.pixCopyPaste, 'PIX Copia e Cola')}
+                          onClick={() => copyToClipboard(profileData.pixCopyPaste || '', 'PIX Copia e Cola')}
                           className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                           title="Copiar PIX"
                         >
@@ -457,7 +457,8 @@ export default function Profile() {
                           className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'block';
+                            const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (sibling) sibling.style.display = 'block';
                           }}
                         />
                         <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
@@ -488,7 +489,7 @@ export default function Profile() {
                       <p className="text-gray-900 break-all pr-10">{profileData?.btcAddress || 'Não informado'}</p>
                       {profileData?.btcAddress && (
                         <button
-                          onClick={() => copyToClipboard(profileData.btcAddress, 'Endereço Bitcoin')}
+                          onClick={() => copyToClipboard(profileData.btcAddress || '', 'Endereço Bitcoin')}
                           className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                           title="Copiar Endereço Bitcoin"
                         >
@@ -507,7 +508,7 @@ export default function Profile() {
                       <p className="text-gray-900 break-all pr-10">{profileData?.usdtAddress || 'Não informado'}</p>
                       {profileData?.usdtAddress && (
                         <button
-                          onClick={() => copyToClipboard(profileData.usdtAddress, 'Endereço USDT')}
+                          onClick={() => copyToClipboard(profileData.usdtAddress || '', 'Endereço USDT')}
                           className="absolute top-0 right-0 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                           title="Copiar Endereço USDT"
                         >
@@ -533,7 +534,8 @@ export default function Profile() {
                           className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'block';
+                            const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (sibling) sibling.style.display = 'block';
                           }}
                         />
                         <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
@@ -558,7 +560,8 @@ export default function Profile() {
                           className="w-48 h-48 border border-gray-300 rounded-lg object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'block';
+                            const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (sibling) sibling.style.display = 'block';
                           }}
                         />
                         <div className="hidden w-48 h-48 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
