@@ -403,6 +403,37 @@ export default function Queue() {
     setEntryToDelete(null);
   };
 
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
+  };
+
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    // Simple hash function to pick a color consistently
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const closeResultsModal = () => {
     setIsResultsModalOpen(false);
     setAllocationResults(null);
@@ -1041,9 +1072,25 @@ export default function Queue() {
                         {/* User Info */}
                         <div className="flex items-start space-x-4 flex-1">
                           <div className="flex-shrink-0">
-                            <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                              <User className="h-6 w-6 text-gray-600" />
-                            </div>
+                            {item.user && (item.type === 'queue' || item.type === 'waiting') ? (
+                              (item.user as any).avatar && (item.user as any).avatar.trim() !== '' ? (
+                                <img
+                                  className="h-12 w-12 rounded-full object-cover"
+                                  src={(item.user as any).avatar}
+                                  alt={`${item.user.firstName} ${item.user.lastName}`}
+                                />
+                              ) : (
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(item.user.firstName, item.user.lastName)}`}>
+                                  <span className="text-white text-lg font-semibold">
+                                    {getInitials(item.user.firstName, item.user.lastName)}
+                                  </span>
+                                </div>
+                              )
+                            ) : (
+                              <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                <User className="h-6 w-6 text-gray-600" />
+                              </div>
+                            )}
                           </div>
                           
                            <div className="flex-1 min-w-0">
@@ -1602,9 +1649,19 @@ export default function Queue() {
             {/* Modal Content */}
             <div className="p-6">
               <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="h-6 w-6 text-gray-600" />
-                </div>
+                {entryToDelete.user && (entryToDelete.user as any).avatar && (entryToDelete.user as any).avatar.trim() !== '' ? (
+                  <img
+                    className="w-12 h-12 rounded-full object-cover"
+                    src={(entryToDelete.user as any).avatar}
+                    alt={`${entryToDelete.user.firstName} ${entryToDelete.user.lastName}`}
+                  />
+                ) : (
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getAvatarColor(entryToDelete.user?.firstName, entryToDelete.user?.lastName)}`}>
+                    <span className="text-white text-lg font-semibold">
+                      {getInitials(entryToDelete.user?.firstName, entryToDelete.user?.lastName)}
+                    </span>
+                  </div>
+                )}
                  <div>
                    <h3 className="text-lg font-semibold text-gray-900">
                      {entryToDelete.user?.firstName} {entryToDelete.user?.lastName}
@@ -2396,9 +2453,19 @@ export default function Queue() {
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-gray-600" />
-                                </div>
+                                {firstEntry?.user && (firstEntry.user as any).avatar && (firstEntry.user as any).avatar.trim() !== '' ? (
+                                  <img
+                                    className="w-8 h-8 rounded-full object-cover"
+                                    src={(firstEntry.user as any).avatar}
+                                    alt={`${firstEntry.user.firstName} ${firstEntry.user.lastName}`}
+                                  />
+                                ) : (
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getAvatarColor(firstEntry?.user?.firstName, firstEntry?.user?.lastName)}`}>
+                                    <span className="text-white text-xs font-semibold">
+                                      {getInitials(firstEntry?.user?.firstName, firstEntry?.user?.lastName)}
+                                    </span>
+                                  </div>
+                                )}
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
                                     {firstEntry?.user?.firstName} {firstEntry?.user?.lastName}
@@ -2424,9 +2491,19 @@ export default function Queue() {
                             
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-gray-600" />
-                                </div>
+                                {secondEntry?.user && (secondEntry.user as any).avatar && (secondEntry.user as any).avatar.trim() !== '' ? (
+                                  <img
+                                    className="w-8 h-8 rounded-full object-cover"
+                                    src={(secondEntry.user as any).avatar}
+                                    alt={`${secondEntry.user.firstName} ${secondEntry.user.lastName}`}
+                                  />
+                                ) : (
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getAvatarColor(secondEntry?.user?.firstName, secondEntry?.user?.lastName)}`}>
+                                    <span className="text-white text-xs font-semibold">
+                                      {getInitials(secondEntry?.user?.firstName, secondEntry?.user?.lastName)}
+                                    </span>
+                                  </div>
+                                )}
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
                                     {secondEntry?.user?.firstName} {secondEntry?.user?.lastName}
@@ -2541,13 +2618,23 @@ export default function Queue() {
                     
                     return (
                       <div className="space-y-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h4 className="text-sm font-medium text-gray-900 mb-3">Usuário a ser movido:</h4>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <User className="h-5 w-5 text-gray-600" />
-                            </div>
-                            <div className="flex-1">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <h4 className="text-sm font-medium text-gray-900 mb-3">Usuário a ser movido:</h4>
+                            <div className="flex items-center space-x-3">
+                              {entry?.user && (entry.user as any).avatar && (entry.user as any).avatar.trim() !== '' ? (
+                                <img
+                                  className="w-10 h-10 rounded-full object-cover"
+                                  src={(entry.user as any).avatar}
+                                  alt={`${entry.user.firstName} ${entry.user.lastName}`}
+                                />
+                              ) : (
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getAvatarColor(entry?.user?.firstName, entry?.user?.lastName)}`}>
+                                  <span className="text-white text-sm font-semibold">
+                                    {getInitials(entry?.user?.firstName, entry?.user?.lastName)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">
                                 {entry?.user?.firstName} {entry?.user?.lastName}
                               </p>

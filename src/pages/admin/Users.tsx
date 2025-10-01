@@ -218,6 +218,37 @@ export default function Users() {
     }
   };
 
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
+  };
+
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    // Simple hash function to pick a color consistently
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const validateUserData = (data: Partial<UserType>): Record<string, string> => {
     const errors: Record<string, string> = {};
     
@@ -560,15 +591,17 @@ export default function Users() {
                           {/* User Info */}
                           <div className="flex items-start space-x-4 flex-1">
                             <div className="flex-shrink-0">
-                              {userData.avatar ? (
+                              {userData.avatar && userData.avatar.trim() !== '' ? (
                                 <img
-                                  className="h-12 w-12 rounded-full"
+                                  className="h-12 w-12 rounded-full object-cover"
                                   src={userData.avatar}
                                   alt={`${userData.firstName} ${userData.lastName}`}
                                 />
                               ) : (
-                                <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                                  <User className="h-6 w-6 text-gray-600" />
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(userData.firstName, userData.lastName)}`}>
+                                  <span className="text-white text-lg font-semibold">
+                                    {getInitials(userData.firstName, userData.lastName)}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -750,15 +783,17 @@ export default function Users() {
                   {/* User Avatar and Basic Info */}
                   <div className="lg:col-span-1">
                     <div className="text-center">
-                      {selectedUser.avatar ? (
+                      {selectedUser.avatar && selectedUser.avatar.trim() !== '' ? (
                         <img
                           src={selectedUser.avatar}
                           alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
                           className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
                         />
                       ) : (
-                        <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center mx-auto mb-4">
-                          <User className="h-16 w-16 text-gray-600" />
+                        <div className={`w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-4 ${getAvatarColor(selectedUser.firstName, selectedUser.lastName)}`}>
+                          <span className="text-white text-4xl font-semibold">
+                            {getInitials(selectedUser.firstName, selectedUser.lastName)}
+                          </span>
                         </div>
                       )}
                       
@@ -1516,15 +1551,17 @@ export default function Users() {
               {/* Modal Content */}
               <div className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  {userToVerify.avatar ? (
+                  {userToVerify.avatar && userToVerify.avatar.trim() !== '' ? (
                     <img
                       src={userToVerify.avatar}
                       alt={`${userToVerify.firstName} ${userToVerify.lastName}`}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                      <User className="h-6 w-6 text-gray-600" />
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getAvatarColor(userToVerify.firstName, userToVerify.lastName)}`}>
+                      <span className="text-white text-lg font-semibold">
+                        {getInitials(userToVerify.firstName, userToVerify.lastName)}
+                      </span>
                     </div>
                   )}
                   <div>
