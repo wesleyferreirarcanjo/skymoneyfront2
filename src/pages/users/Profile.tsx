@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { User, Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy, Camera } from 'lucide-react';
+import { Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy, Camera } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Profile() {
@@ -35,6 +35,37 @@ export default function Profile() {
     } catch (err) {
       console.error('Erro ao copiar:', err);
     }
+  };
+
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
+  };
+
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    // Simple hash function to pick a color consistently
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
   };
 
   const handleAvatarClick = () => {
@@ -167,11 +198,15 @@ export default function Profile() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center">
                 <div className="relative inline-block">
-                  <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+                  <div className="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
                     {profileData?.avatar ? (
                       <img src={profileData.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
                     ) : (
-                      <User className="w-16 h-16 text-gray-400" />
+                      <div className={`w-full h-full ${getAvatarColor(profileData?.firstName, profileData?.lastName)} flex items-center justify-center`}>
+                        <span className="text-white text-4xl font-semibold">
+                          {getInitials(profileData?.firstName, profileData?.lastName)}
+                        </span>
+                      </div>
                     )}
                   </div>
                   
