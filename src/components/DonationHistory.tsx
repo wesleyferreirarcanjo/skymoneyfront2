@@ -1,6 +1,6 @@
 import React from 'react';
 import { DonationHistory as DonationHistoryType, DonationHistoryItem, DonationType, DonationStatus } from '../types/donation';
-import { User, ArrowUpRight, ArrowDownLeft, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { User, ArrowUpRight, ArrowDownLeft, Calendar, CheckCircle, XCircle, Clock, MessageCircle } from 'lucide-react';
 
 interface DonationHistoryProps {
   donations: DonationHistoryType | null;
@@ -149,6 +149,16 @@ export default function DonationHistory({ donations, loading }: DonationHistoryP
     return null;
   };
 
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Add country code if not present (assuming Brazil +55)
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -236,8 +246,20 @@ export default function DonationHistory({ donations, loading }: DonationHistoryP
                 </div>
               </div>
 
-              {/* Status Badge */}
-              <div className="flex-shrink-0">
+              {/* WhatsApp and Status */}
+              <div className="flex-shrink-0 flex flex-col items-end space-y-2">
+                {contactPerson?.phone && (
+                  <a
+                    href={getWhatsAppLink(contactPerson.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                    title="Contatar via WhatsApp"
+                  >
+                    <MessageCircle className="h-3 w-3" />
+                    <span>WhatsApp</span>
+                  </a>
+                )}
                 {getStatusBadge(donation.status)}
               </div>
             </div>

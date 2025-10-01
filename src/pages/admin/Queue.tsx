@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { queueAPI, authAPI } from '../../lib/api';
-import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target } from 'lucide-react';
+import { Clock, Users, AlertCircle, Search, X, Eye, Calendar, User, Mail, RefreshCw, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Trash2, Crown, Target, MessageCircle, Phone } from 'lucide-react';
 import { QueueEntry, CreateQueueEntryRequest } from '../../types/queue';
 import { User as UserType, UserRole } from '../../types/user';
 
@@ -460,6 +460,16 @@ export default function Queue() {
     if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
     
     return null;
+  };
+
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Add country code if not present (assuming Brazil +55)
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
   };
 
   const closeResultsModal = () => {
@@ -1178,6 +1188,10 @@ export default function Queue() {
                                      <Mail className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                                      <span className="truncate">{item.user.email}</span>
                                    </div>
+                                   <div className="flex items-center">
+                                     <Phone className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                                     <span>{item.user.phone}</span>
+                                   </div>
                                    {item.type === 'queue' ? (
                                      <>
                                        <div className="flex items-center">
@@ -1197,6 +1211,17 @@ export default function Queue() {
                                        <span>Aguardando para entrar na fila</span>
                                      </div>
                                    )}
+                                   <div>
+                                     <a
+                                       href={getWhatsAppLink(item.user.phone)}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className="inline-flex items-center space-x-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                                     >
+                                       <MessageCircle className="h-3 w-3" />
+                                       <span>WhatsApp</span>
+                                     </a>
+                                   </div>
                                  </>
                                )}
                              </div>
@@ -1576,8 +1601,23 @@ export default function Queue() {
                        <p className="text-sm text-gray-900">{selectedEntry.user?.email}</p>
                      </div>
                      <div>
+                       <label className="text-sm font-medium text-gray-500">Telefone</label>
+                       <p className="text-sm text-gray-900">{selectedEntry.user?.phone}</p>
+                     </div>
+                     <div>
                        <label className="text-sm font-medium text-gray-500">ID do Usuário</label>
                        <p className="text-sm text-gray-900 font-mono">{selectedEntry.user?.id}</p>
+                     </div>
+                     <div className="md:col-span-2">
+                       <a
+                         href={getWhatsAppLink(selectedEntry.user?.phone)}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="inline-flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                       >
+                         <MessageCircle className="h-4 w-4" />
+                         <span>Contatar via WhatsApp</span>
+                       </a>
                      </div>
                   </div>
                 </div>

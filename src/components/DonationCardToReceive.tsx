@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest } from '../types/donation';
 import { donationAPI } from '../lib/api';
-import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check } from 'lucide-react';
+import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
 
 interface DonationCardToReceiveProps {
   donation: Donation;
@@ -120,6 +120,16 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     }
   };
 
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Add country code if not present (assuming Brazil +55)
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
+
   const handleConfirmReceipt = async () => {
     console.log('🟢 Confirm button clicked for donation:', donation.id);
     try {
@@ -230,6 +240,21 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
                 <p className="text-sm text-gray-500">Tipo de Doação:</p>
                 <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
               </div>
+
+              {/* WhatsApp Contact */}
+              {donation.donor?.phone && (
+                <div className="mb-3">
+                  <a
+                    href={getWhatsAppLink(donation.donor.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 

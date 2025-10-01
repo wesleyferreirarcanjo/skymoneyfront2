@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check } from 'lucide-react';
+import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check, MessageCircle } from 'lucide-react';
 import { User as UserType, UserRole, UserStatus } from '../../types/user';
 
 export default function Users() {
@@ -275,6 +275,16 @@ export default function Users() {
     if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
     
     return null;
+  };
+
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Add country code if not present (assuming Brazil +55)
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
   };
 
   const validateUserData = (data: Partial<UserType>): Record<string, string> => {
@@ -660,6 +670,17 @@ export default function Users() {
                                   <Calendar className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                                   <span>Cadastrado em {formatDate(userData.createdAt)}</span>
                                 </div>
+                                <div>
+                                  <a
+                                    href={getWhatsAppLink(userData.phone)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center space-x-1 px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                                  >
+                                    <MessageCircle className="h-3 w-3" />
+                                    <span>WhatsApp</span>
+                                  </a>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -898,6 +919,17 @@ export default function Users() {
                             <Phone className="h-4 w-4 mr-2 text-gray-400" />
                             {selectedUser.phone}
                           </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <a
+                            href={getWhatsAppLink(selectedUser.phone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            <span>Contatar via WhatsApp</span>
+                          </a>
                         </div>
                       </div>
                     </div>

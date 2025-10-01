@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Donation, DonationType, DonationStatus } from '../types/donation';
 import { donationAPI } from '../lib/api';
-import { User, CreditCard, Calendar, Clock, Upload, Copy, Check, AlertCircle } from 'lucide-react';
+import { User, CreditCard, Calendar, Clock, Upload, Copy, Check, AlertCircle, MessageCircle } from 'lucide-react';
 
 interface DonationCardToSendProps {
   donation: Donation;
@@ -131,6 +131,16 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
     }
   };
 
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    // Remove all non-numeric characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    // Add country code if not present (assuming Brazil +55)
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
+
   // Helper function to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -258,6 +268,21 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
                 </div>
               </div>
             </div>
+
+            {/* WhatsApp Contact */}
+            {donation.receiver?.phone && (
+              <div className="mb-4">
+                <a
+                  href={getWhatsAppLink(donation.receiver.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">Contatar via WhatsApp</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
