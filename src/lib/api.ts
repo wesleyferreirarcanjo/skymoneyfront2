@@ -227,6 +227,18 @@ export const authAPI = {
       throw error;
     }
   },
+
+  uploadAvatar: async (avatarBase64: string): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest('/users/profile/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ avatar: avatarBase64 }),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 // Reports list response

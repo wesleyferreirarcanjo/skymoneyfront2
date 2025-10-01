@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { authAPI } from '../../lib/api';
 import { formatDate } from '../../lib/dateUtils';
-import { User, Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Building, Hash, Key, QrCode, CheckCircle, XCircle, Copy, Camera } from 'lucide-react';
 import { User as UserType } from '../../types/user';
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<UserType | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfileData();
@@ -31,6 +34,105 @@ export default function Profile() {
       console.log(`${label} copiado para a área de transferência`);
     } catch (err) {
       console.error('Erro ao copiar:', err);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const validateImage = (file: File): Promise<{ valid: boolean; error?: string }> => {
+    return new Promise((resolve) => {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        resolve({ valid: false, error: 'Por favor, selecione um arquivo de imagem válido.' });
+        return;
+      }
+
+      // Check file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        resolve({ valid: false, error: 'A imagem deve ter no máximo 5MB.' });
+        return;
+      }
+
+      // Check dimensions
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.width !== 400 || img.height !== 400) {
+          resolve({ valid: false, error: 'A imagem deve ter exatamente 400x400 pixels.' });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({ valid: false, error: 'Erro ao carregar a imagem.' });
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadMessage(null);
+    setUploadingAvatar(true);
+
+    try {
+      // Validate image
+      const validation = await validateImage(file);
+      if (!validation.valid) {
+        setUploadMessage({ type: 'error', text: validation.error || 'Erro na validação da imagem.' });
+        setUploadingAvatar(false);
+        return;
+      }
+
+      // Convert to base64
+      const base64Image = await convertToBase64(file);
+
+      // Upload to server
+      await authAPI.uploadAvatar(base64Image);
+
+      // Refresh profile data
+      await fetchProfileData();
+
+      setUploadMessage({ type: 'success', text: 'Avatar atualizado com sucesso!' });
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setUploadMessage(null);
+      }, 3000);
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      setUploadMessage({ 
+        type: 'error', 
+        text: error.message || 'Erro ao fazer upload do avatar. Tente novamente.' 
+      });
+    } finally {
+      setUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -64,14 +166,55 @@ export default function Profile() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center">
-                <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                  {profileData?.avatar ? (
-                    <img src={profileData.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
-                  ) : (
-                    <User className="w-16 h-16 text-gray-400" />
-                  )}
+                <div className="relative inline-block">
+                  <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden">
+                    {profileData?.avatar ? (
+                      <img src={profileData.avatar} alt="Avatar" className="w-32 h-32 rounded-full object-cover" />
+                    ) : (
+                      <User className="w-16 h-16 text-gray-400" />
+                    )}
+                  </div>
+                  
+                  {/* Upload Avatar Button */}
+                  <button
+                    onClick={handleAvatarClick}
+                    disabled={uploadingAvatar}
+                    className="absolute bottom-2 right-0 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    title="Alterar foto de perfil (400x400px)"
+                  >
+                    {uploadingAvatar ? (
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
+                  </button>
+                  
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-800">
+
+                {/* Upload Message */}
+                {uploadMessage && (
+                  <div className={`mt-2 text-xs px-3 py-2 rounded ${
+                    uploadMessage.type === 'success' 
+                      ? 'bg-green-50 text-green-700 border border-green-200' 
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                  }`}>
+                    {uploadMessage.text}
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Imagem: 400x400px
+                </p>
+
+                <h2 className="text-xl font-semibold text-gray-800 mt-3">
                   {profileData?.firstName} {profileData?.lastName}
                 </h2>
                 <p className="text-gray-600">{profileData?.email}</p>
