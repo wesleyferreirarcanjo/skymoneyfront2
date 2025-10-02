@@ -133,12 +133,23 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
   const getWhatsAppLink = (phone?: string): string => {
     if (!phone) return '#';
-    // Remove all non-numeric characters
     const cleanPhone = phone.replace(/\D/g, '');
-    // Add country code if not present (assuming Brazil +55)
     const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
     const message = encodeURIComponent('Ola eu sou um test');
     return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
+
+  const getPhoneFromProfileOrPix = (phone?: string, pixKey?: string): string | undefined => {
+    // Prefer explicit phone
+    if (phone && phone.replace(/\D/g, '').length >= 10) return phone;
+    // Try to derive from PIX key if it looks like a phone
+    if (pixKey) {
+      const digits = pixKey.replace(/\D/g, '');
+      if (digits.length >= 10 && digits.length <= 13) {
+        return digits;
+      }
+    }
+    return undefined;
   };
 
   // Helper function to convert file to base64
@@ -270,19 +281,22 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
             </div>
 
             {/* WhatsApp Contact */}
-            {donation.receiver?.phone && (
-              <div className="mb-4">
-                <a
-                  href={getWhatsAppLink(donation.receiver.phone)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Contatar via WhatsApp</span>
-                </a>
-              </div>
-            )}
+            {(() => {
+              const phone = getPhoneFromProfileOrPix(donation.receiver as any && (donation.receiver as any).phone, donation.receiver?.pixKey);
+              return phone ? (
+                <div className="mb-4">
+                  <a
+                    href={getWhatsAppLink(phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">Contatar via WhatsApp</span>
+                  </a>
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
 

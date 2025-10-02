@@ -122,12 +122,21 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
 
   const getWhatsAppLink = (phone?: string): string => {
     if (!phone) return '#';
-    // Remove all non-numeric characters
     const cleanPhone = phone.replace(/\D/g, '');
-    // Add country code if not present (assuming Brazil +55)
     const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
     const message = encodeURIComponent('Ola eu sou um test');
     return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
+
+  const getPhoneFromProfileOrPix = (phone?: string, pixKey?: string): string | undefined => {
+    if (phone && phone.replace(/\D/g, '').length >= 10) return phone;
+    if (pixKey) {
+      const digits = pixKey.replace(/\D/g, '');
+      if (digits.length >= 10 && digits.length <= 13) {
+        return digits;
+      }
+    }
+    return undefined;
   };
 
   const handleConfirmReceipt = async () => {
@@ -242,19 +251,22 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
               </div>
 
               {/* WhatsApp Contact */}
-              {donation.donor?.phone && (
-                <div className="mb-3">
-                  <a
-                    href={getWhatsAppLink(donation.donor.phone)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-2 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>WhatsApp</span>
-                  </a>
-                </div>
-              )}
+              {(() => {
+                const phone = getPhoneFromProfileOrPix((donation.donor as any)?.phone, donation.donor?.pixKey);
+                return phone ? (
+                  <div className="mb-3">
+                    <a
+                      href={getWhatsAppLink(phone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-2 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
 
