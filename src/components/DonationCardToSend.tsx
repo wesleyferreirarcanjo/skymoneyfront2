@@ -121,8 +121,9 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
   const handleCopyPixKey = async () => {
     try {
-      if (donation.receiver?.pixKey) {
-        await navigator.clipboard.writeText(donation.receiver.pixKey);
+      const pixKey = (donation.receiver as any)?.pixCopyPaste || (donation.receiver as any)?.pixKey;
+      if (pixKey) {
+        await navigator.clipboard.writeText(pixKey);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }
@@ -251,17 +252,19 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
             </div>
 
-            {/* PIX Key */}
+            {/* Payment Methods */}
             <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-1">Chave PIX do Recebedor:</p>
-              <div className="flex items-center space-x-2">
-                <div className="flex-1 bg-gray-50 p-3 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-mono text-gray-900">{donation.receiver?.pixKey || 'Chave PIX não disponível'}</p>
-                      <p className="text-xs text-gray-500">PIX</p>
-                    </div>
-                    {donation.receiver?.pixKey && (
+              <p className="text-sm text-gray-500 mb-3">Métodos de Pagamento:</p>
+              
+              {/* PIX */}
+              {(donation.receiver as any)?.pixKey && (
+                <div className="mb-3">
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">PIX</p>
+                        <p className="text-sm font-mono text-gray-700">{(donation.receiver as any).pixCopyPaste || (donation.receiver as any).pixKey}</p>
+                      </div>
                       <button
                         onClick={handleCopyPixKey}
                         className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
@@ -274,10 +277,81 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
                         )}
                         <span className="text-xs">{copied ? 'Copiado!' : 'Copiar'}</span>
                       </button>
+                    </div>
+                    {(donation.receiver as any)?.pixQrCode && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={(donation.receiver as any).pixQrCode} 
+                          alt="QR Code PIX" 
+                          className="w-24 h-24 border border-gray-200 rounded"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Bitcoin */}
+              {(donation.receiver as any)?.btcAddress && (
+                <div className="mb-3">
+                  <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-orange-900">Bitcoin (BTC)</p>
+                        <p className="text-sm font-mono text-orange-700 break-all">{(donation.receiver as any).btcAddress}</p>
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText((donation.receiver as any).btcAddress)}
+                        className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
+                        title="Copiar endereço Bitcoin"
+                      >
+                        <Copy className="h-4 w-4" />
+                        <span className="text-xs">Copiar</span>
+                      </button>
+                    </div>
+                    {(donation.receiver as any)?.btcQrCode && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={(donation.receiver as any).btcQrCode} 
+                          alt="QR Code Bitcoin" 
+                          className="w-24 h-24 border border-orange-200 rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* USDT */}
+              {(donation.receiver as any)?.usdtAddress && (
+                <div className="mb-3">
+                  <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">USDT (Tether)</p>
+                        <p className="text-sm font-mono text-blue-700 break-all">{(donation.receiver as any).usdtAddress}</p>
+                      </div>
+                      <button
+                        onClick={() => navigator.clipboard.writeText((donation.receiver as any).usdtAddress)}
+                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Copiar endereço USDT"
+                      >
+                        <Copy className="h-4 w-4" />
+                        <span className="text-xs">Copiar</span>
+                      </button>
+                    </div>
+                    {(donation.receiver as any)?.usdtQrCode && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={(donation.receiver as any).usdtQrCode} 
+                          alt="QR Code USDT" 
+                          className="w-24 h-24 border border-blue-200 rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* WhatsApp Contact */}
@@ -351,7 +425,7 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
       {/* Instructions */}
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
         <p className="text-sm text-blue-800">
-          <strong>Instruções:</strong> 1) Copie a chave PIX acima. 2) Faça o pagamento no seu app bancário. 3) Tire um print do comprovante. 4) Clique em "Enviar Comprovante" para fazer upload.
+          <strong>Instruções:</strong> 1) Escolha um método de pagamento acima (PIX, Bitcoin ou USDT). 2) Copie o endereço/chave ou escaneie o QR Code. 3) Faça o pagamento. 4) Tire um print do comprovante. 5) Clique em "Enviar Comprovante" para fazer upload.
         </p>
       </div>
     </div>
