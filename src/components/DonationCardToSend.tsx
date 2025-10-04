@@ -213,8 +213,9 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+      {/* Header Section - Avatar, Name and Status */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start space-x-4 flex-1">
+        <div className="flex items-start space-x-4">
           {/* Receiver Avatar */}
           <div className="flex-shrink-0">
             {formatAvatarUrl(donation.receiver?.avatarUrl) ? (
@@ -234,20 +235,35 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
             )}
           </div>
 
-          {/* Donation Info */}
-          <div className="flex-1 min-w-0">
-            <div className="mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                {donation.receiver?.firstName && donation.receiver?.lastName 
-                  ? `${donation.receiver.firstName} ${donation.receiver.lastName}`
-                  : donation.receiver?.name}
-              </h3>
-              {donation.receiver_queue_position !== undefined && donation.receiver_queue_level !== undefined && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  Fila N{donation.receiver_queue_level} - Pos #{donation.receiver_queue_position}
-                </span>
-              )}
-            </div>
+          {/* Name and Badge */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              {donation.receiver?.firstName && donation.receiver?.lastName 
+                ? `${donation.receiver.firstName} ${donation.receiver.lastName}`
+                : donation.receiver?.name}
+            </h3>
+            {donation.receiver_queue_position !== undefined && donation.receiver_queue_level !== undefined && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Fila N{donation.receiver_queue_level} - Pos #{donation.receiver_queue_position}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Status and Deadline */}
+        <div className="flex-shrink-0 text-right">
+          <div className="flex items-center justify-end text-orange-600 mb-2">
+            <Clock className="h-4 w-4 mr-1" />
+            <span className="text-sm font-medium">Aguardando seu envio</span>
+          </div>
+          <div className="text-sm text-gray-500">
+            Prazo: {getTimeRemaining(donation.deadline)}
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div>
 
             {/* User Details */}
             {(donation.receiver?.firstName || donation.receiver?.email || donation.receiver?.phone || donation.receiver?.pixOwnerName) && (
@@ -284,152 +300,137 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               </div>
             )}
 
-            {/* Amount */}
-            <div className="mb-3">
-              <p className="text-sm text-gray-500">Valor:</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(donation.amount)}</p>
-            </div>
+        {/* Amount */}
+        <div className="mb-3">
+          <p className="text-sm text-gray-500">Valor:</p>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(donation.amount)}</p>
+        </div>
 
-            {/* Donation Type */}
-            <div className="mb-3">
-              <p className="text-sm text-gray-500">Tipo de Doação:</p>
-              <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
-            </div>
+        {/* Donation Type */}
+        <div className="mb-3">
+          <p className="text-sm text-gray-500">Tipo de Doação:</p>
+          <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
+        </div>
 
-            {/* Payment Methods */}
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-3">Métodos de Pagamento:</p>
+        {/* Payment Methods */}
+        <div className="mb-4">
+          <p className="text-sm text-gray-500 mb-3">Métodos de Pagamento:</p>
               
-              {/* PIX */}
-              {donation.receiver?.pixKey && (
-                <div className="mb-3">
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">PIX</p>
-                        <p className="text-sm font-mono text-gray-700">{donation.receiver.pixCopyPaste || donation.receiver.pixKey}</p>
-                      </div>
-                      <button
-                        onClick={handleCopyPixKey}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
-                        title="Copiar chave PIX"
-                      >
-                        {copied ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                        <span className="text-xs">{copied ? 'Copiado!' : 'Copiar'}</span>
-                      </button>
-                    </div>
-                    {donation.receiver?.pixQrCode && (
-                      <div className="flex justify-center">
-                        <img 
-                          src={donation.receiver.pixQrCode} 
-                          alt="QR Code PIX" 
-                          className="w-24 h-24 border border-gray-200 rounded"
-                        />
-                      </div>
-                    )}
+          {/* PIX */}
+          {donation.receiver?.pixKey && (
+            <div className="mb-3">
+              <div className="bg-gray-50 p-3 rounded-md">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">PIX</p>
+                    <p className="text-sm font-mono text-gray-700">{donation.receiver.pixCopyPaste || donation.receiver.pixKey}</p>
                   </div>
-                </div>
-              )}
-
-              {/* Bitcoin */}
-              {donation.receiver?.btcAddress && (
-                <div className="mb-3">
-                  <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium text-orange-900">Bitcoin (BTC)</p>
-                        <p className="text-sm font-mono text-orange-700 break-all">{donation.receiver.btcAddress}</p>
-                      </div>
-                      <button
-                        onClick={() => donation.receiver?.btcAddress && navigator.clipboard.writeText(donation.receiver.btcAddress)}
-                        className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
-                        title="Copiar endereço Bitcoin"
-                      >
-                        <Copy className="h-4 w-4" />
-                        <span className="text-xs">Copiar</span>
-                      </button>
-                    </div>
-                    {donation.receiver?.btcQrCode && (
-                      <div className="flex justify-center">
-                        <img 
-                          src={donation.receiver.btcQrCode} 
-                          alt="QR Code Bitcoin" 
-                          className="w-24 h-24 border border-orange-200 rounded"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* USDT */}
-              {donation.receiver?.usdtAddress && (
-                <div className="mb-3">
-                  <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-medium text-blue-900">USDT (Tether)</p>
-                        <p className="text-sm font-mono text-blue-700 break-all">{donation.receiver.usdtAddress}</p>
-                      </div>
-                      <button
-                        onClick={() => donation.receiver?.usdtAddress && navigator.clipboard.writeText(donation.receiver.usdtAddress)}
-                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
-                        title="Copiar endereço USDT"
-                      >
-                        <Copy className="h-4 w-4" />
-                        <span className="text-xs">Copiar</span>
-                      </button>
-                    </div>
-                    {donation.receiver?.usdtQrCode && (
-                      <div className="flex justify-center">
-                        <img 
-                          src={donation.receiver.usdtQrCode} 
-                          alt="QR Code USDT" 
-                          className="w-24 h-24 border border-blue-200 rounded"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* WhatsApp Contact */}
-            {(() => {
-              const phone = getPhoneFromProfileOrPix(donation.receiver?.phone, donation.receiver?.pixKey);
-              return phone ? (
-                <div className="mb-4">
-                  <a
-                    href={getWhatsAppLink(phone)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  <button
+                    onClick={handleCopyPixKey}
+                    className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Copiar chave PIX"
                   >
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Contatar via WhatsApp</span>
-                  </a>
+                    {copied ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    <span className="text-xs">{copied ? 'Copiado!' : 'Copiar'}</span>
+                  </button>
                 </div>
-              ) : null;
-            })()}
-          </div>
+                {donation.receiver?.pixQrCode && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={donation.receiver.pixQrCode} 
+                      alt="QR Code PIX" 
+                      className="w-24 h-24 border border-gray-200 rounded"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bitcoin */}
+          {donation.receiver?.btcAddress && (
+            <div className="mb-3">
+              <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-orange-900">Bitcoin (BTC)</p>
+                    <p className="text-sm font-mono text-orange-700 break-all">{donation.receiver.btcAddress}</p>
+                  </div>
+                  <button
+                    onClick={() => donation.receiver?.btcAddress && navigator.clipboard.writeText(donation.receiver.btcAddress)}
+                    className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
+                    title="Copiar endereço Bitcoin"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span className="text-xs">Copiar</span>
+                  </button>
+                </div>
+                {donation.receiver?.btcQrCode && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={donation.receiver.btcQrCode} 
+                      alt="QR Code Bitcoin" 
+                      className="w-24 h-24 border border-orange-200 rounded"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* USDT */}
+          {donation.receiver?.usdtAddress && (
+            <div className="mb-3">
+              <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">USDT (Tether)</p>
+                    <p className="text-sm font-mono text-blue-700 break-all">{donation.receiver.usdtAddress}</p>
+                  </div>
+                  <button
+                    onClick={() => donation.receiver?.usdtAddress && navigator.clipboard.writeText(donation.receiver.usdtAddress)}
+                    className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
+                    title="Copiar endereço USDT"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span className="text-xs">Copiar</span>
+                  </button>
+                </div>
+                {donation.receiver?.usdtQrCode && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={donation.receiver.usdtQrCode} 
+                      alt="QR Code USDT" 
+                      className="w-24 h-24 border border-blue-200 rounded"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Status and Deadline */}
-        <div className="flex-shrink-0 ml-4">
-          <div className="text-right">
-            <div className="flex items-center text-orange-600 mb-2">
-              <Clock className="h-4 w-4 mr-1" />
-              <span className="text-sm font-medium">Aguardando seu envio</span>
+        {/* WhatsApp Contact */}
+        {(() => {
+          const phone = getPhoneFromProfileOrPix(donation.receiver?.phone, donation.receiver?.pixKey);
+          return phone ? (
+            <div className="mb-4">
+              <a
+                href={getWhatsAppLink(phone)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Contatar via WhatsApp</span>
+              </a>
             </div>
-            <div className="text-sm text-gray-500">
-              Prazo: {getTimeRemaining(donation.deadline)}
-            </div>
-          </div>
-        </div>
+          ) : null;
+        })()}
       </div>
 
       {/* Error Message */}
