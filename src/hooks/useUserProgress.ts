@@ -57,10 +57,11 @@ export const useUserProgress = () => {
     const completedLevels = getCompletedLevels();
     if (completedLevels.length === 0) return false;
     
-    // Verifica se há um nível completado seguido de um nível não iniciado
+    // Verifica se há um nível completado mas o próximo nível NÃO existe ainda
+    // Se o próximo nível existe, significa que o upgrade já foi aceito
     for (const completed of completedLevels) {
       const nextLevel = getLevelProgress(completed.level + 1);
-      if (nextLevel && nextLevel.donations_received === 0) {
+      if (!nextLevel) {
         return true;
       }
     }

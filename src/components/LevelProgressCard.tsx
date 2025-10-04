@@ -125,9 +125,12 @@ export default function LevelProgressCard({ onUpgradeSuccess }: LevelProgressCar
             const isCompleted = level.level_completed;
             const isInProgress = level.donations_received > 0 && !isCompleted;
             const isLocked = level.donations_received === 0 && !isCompleted && index > 0;
-            const hasUpgradeAvailable = isCompleted && 
-              checkForPendingUpgrade() &&
-              levelProgress.find(l => l.level === level.level + 1)?.donations_received === 0;
+            
+            // Check if upgrade is available:
+            // 1. Current level must be completed
+            // 2. Next level must NOT exist in progress array (indicating upgrade hasn't happened yet)
+            const nextLevel = levelProgress.find(l => l.level === level.level + 1);
+            const hasUpgradeAvailable = isCompleted && !nextLevel;
 
             return (
               <div
