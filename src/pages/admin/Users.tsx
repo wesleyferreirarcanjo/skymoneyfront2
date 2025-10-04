@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { authAPI } from '../../lib/api';
-import { formatDate } from '../../lib/dateUtils';
-import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, DollarSign, Upload, Save, Copy, Check, MessageCircle } from 'lucide-react';
+import { Users as UsersIcon, User, Mail, Phone, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, X, Eye, MapPin, CreditCard, QrCode, Bitcoin, Upload, Save, Copy, Check, MessageCircle } from 'lucide-react';
 import { User as UserType, UserRole, UserStatus } from '../../types/user';
+
+// Extended type for editing with optional password field
+type EditUserFormData = Partial<UserType> & {
+  password?: string;
+};
 
 export default function Users() {
   const [users, setUsers] = useState<UserType[]>([]);
@@ -18,7 +22,7 @@ export default function Users() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
-  const [editFormData, setEditFormData] = useState<Partial<UserType>>({});
+  const [editFormData, setEditFormData] = useState<EditUserFormData>({});
   const [editLoading, setEditLoading] = useState(false);
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -94,7 +98,8 @@ export default function Users() {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
@@ -181,7 +186,7 @@ export default function Users() {
     setConfirmPassword('');
   };
 
-  const handleInputChange = (field: keyof UserType, value: any) => {
+  const handleInputChange = (field: keyof EditUserFormData, value: any) => {
     setEditFormData(prev => ({
       ...prev,
       [field]: value
@@ -301,7 +306,7 @@ export default function Users() {
     return `https://wa.me/${phoneWithCountry}?text=${message}`;
   };
 
-  const validateUserData = (data: Partial<UserType>): Record<string, string> => {
+  const validateUserData = (data: EditUserFormData): Record<string, string> => {
     const errors: Record<string, string> = {};
     
     // Common regex patterns (same as register page)
@@ -391,8 +396,12 @@ export default function Users() {
     try {
       setEditLoading(true);
       
+      console.log('Saving user data:', editFormData);
+      
       // Validate the form data using same rules as registration
       const validationErrors = validateUserData(editFormData);
+      
+      console.log('Validation errors:', validationErrors);
       
       // Validate password confirmation
       const passwordErrors = validatePasswordConfirmation(editFormData.password || '', confirmPassword);
@@ -402,6 +411,7 @@ export default function Users() {
       
       // If there are validation errors, set them and focus on first error
       if (Object.keys(allErrors).length > 0) {
+        console.error('Form has validation errors:', allErrors);
         setEditErrors(allErrors);
         
         // Focus on the first field with an error
@@ -424,6 +434,8 @@ export default function Users() {
       delete updateData.createdAt;
       delete updateData.updatedAt;
 
+      console.log('Sending update to API:', updateData);
+
       // Call the PATCH /users/:id endpoint
       await authAPI.updateUser(editingUser.id, updateData);
       console.log('User updated successfully:', editingUser.id);
@@ -434,10 +446,12 @@ export default function Users() {
       );
       setAllUsers(updatedUsers);
       
+      alert('Usuário atualizado com sucesso!');
       closeEditModal();
     } catch (error: any) {
       console.error('Error updating user:', error);
       // Show API error
+      alert('Erro ao atualizar usuário: ' + (error.message || 'Erro desconhecido'));
       setEditErrors({ general: error.message || 'Erro ao atualizar usuário' });
     } finally {
       setEditLoading(false);
@@ -1124,6 +1138,25 @@ export default function Users() {
 
               {/* Modal Content */}
               <div className="p-6">
+                {/* Display general errors */}
+                {editErrors.general && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-red-800 text-sm font-medium">{editErrors.general}</p>
+                  </div>
+                )}
+                
+                {/* Display all validation errors */}
+                {Object.keys(editErrors).length > 0 && !editErrors.general && (
+                  <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-yellow-800 text-sm font-semibold mb-2">Corrija os seguintes erros:</p>
+                    <ul className="list-disc list-inside text-yellow-700 text-sm">
+                      {Object.entries(editErrors).map(([field, error]) => (
+                        <li key={field}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Personal Information */}
                   <div className="space-y-3">
@@ -1168,61 +1201,97 @@ export default function Users() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                       <input
+                        id="firstName"
                         type="text"
                         value={editFormData.firstName || ''}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.firstName && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.firstName}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome</label>
                       <input
+                        id="lastName"
                         type="text"
                         value={editFormData.lastName || ''}
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.lastName && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.lastName}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <input
+                        id="email"
                         type="email"
                         value={editFormData.email || ''}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.email && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.email}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
                       <input
+                        id="phone"
                         type="tel"
                         value={editFormData.phone || ''}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.phone && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.phone}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
                       <input
+                        id="cpf"
                         type="text"
                         value={editFormData.cpf || ''}
                         onChange={(e) => handleInputChange('cpf', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.cpf ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.cpf && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.cpf}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
                       <input
+                        id="birthDate"
                         type="date"
                         value={editFormData.birthDate ? editFormData.birthDate.split('T')[0] : ''}
                         onChange={(e) => handleInputChange('birthDate', e.target.value + 'T00:00:00.000Z')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.birthDate ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.birthDate && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.birthDate}</span>
+                      )}
                     </div>
 
                     <div>
@@ -1277,31 +1346,49 @@ export default function Users() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
                       <input
+                        id="address"
                         type="text"
                         value={editFormData.address || ''}
                         onChange={(e) => handleInputChange('address', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.address && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.address}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
                       <input
+                        id="addressNumber"
                         type="text"
                         value={editFormData.addressNumber || ''}
                         onChange={(e) => handleInputChange('addressNumber', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.addressNumber ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.addressNumber && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.addressNumber}</span>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
                       <input
+                        id="cep"
                         type="text"
                         value={editFormData.cep || ''}
                         onChange={(e) => handleInputChange('cep', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          editErrors.cep ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
+                      {editErrors.cep && (
+                        <span className="text-red-500 text-sm mt-1">{editErrors.cep}</span>
+                      )}
                     </div>
                   </div>
 
