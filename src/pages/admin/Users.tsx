@@ -1110,6 +1110,42 @@ export default function Users() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Informações Pessoais</h3>
                     
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('avatar', file);
+                          }}
+                          className="hidden"
+                          id="avatar-upload"
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="flex items-center px-3 py-2 bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Avatar
+                        </label>
+                        {editFormData.avatar && formatAvatarUrl(editFormData.avatar) ? (
+                          <img
+                            src={formatAvatarUrl(editFormData.avatar)!}
+                            alt="Avatar Preview"
+                            className="w-16 h-16 rounded-full border border-gray-300 object-cover"
+                          />
+                        ) : (
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center border border-gray-300 ${getAvatarColor(editFormData.firstName, editFormData.lastName)}`}>
+                            <span className="text-white text-xl font-semibold">
+                              {getInitials(editFormData.firstName, editFormData.lastName)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                       <input
                         type="text"
