@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest, UpgradeAvailable } from '../types/donation';
 import { donationAPI } from '../lib/api';
+import { donationsService } from '../services/donations.service';
 import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
@@ -148,7 +149,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
       setConfirming(true);
       setError(null);
       console.log('🔄 Making API call to confirm donation...');
-      const response = await donationAPI.confirmDonation({ donationId: donation.id });
+      const response = await donationsService.confirmDonation(donation.id);
       console.log('✅ Donation confirmed successfully, response:', response);
       
       // Check if level was completed and upgrade is available

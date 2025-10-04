@@ -333,7 +333,6 @@ export default function UserDonationsPage() {
 
             {activeTab === 'levels' && (
               <LevelProgressCard 
-                levelProgress={levelProgress} 
                 onUpgradeSuccess={loadData}
               />
             )}

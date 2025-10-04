@@ -1,18 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LevelProgress, UpgradeAvailable, AcceptUpgradeRequest } from '../types/donation';
-import { donationAPI } from '../lib/api';
+import { useUserProgress } from '../hooks/useUserProgress';
 import { CheckCircle, Clock, Lock, ArrowUp, DollarSign, TrendingUp, Loader2 } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
 interface LevelProgressCardProps {
-  levelProgress: LevelProgress[];
-  onUpgradeSuccess: () => void;
+  onUpgradeSuccess?: () => void;
 }
 
-export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: LevelProgressCardProps) {
+export default function LevelProgressCard({ onUpgradeSuccess }: LevelProgressCardProps) {
+  const { 
+    progress: levelProgress, 
+    loading, 
+    error, 
+    refetch,
+    getCurrentLevel,
+    getCompletedLevels,
+    hasUpgradeAvailable
+  } = useUserProgress();
+  
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeInfo, setUpgradeInfo] = useState<UpgradeAvailable | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -51,48 +59,18 @@ export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: L
     }
   };
 
-  const checkForPendingUpgrade = async () => {
-    // Find completed levels that might have pending upgrades
-    const completedLevels = levelProgress.filter(level => level.level_completed);
-    
-    if (completedLevels.length > 0) {
-      // Check if there's a completed level followed by a non-started level
-      for (let i = 0; i < completedLevels.length; i++) {
-        const completedLevel = completedLevels[i];
-        const nextLevel = levelProgress.find(l => l.level === completedLevel.level + 1);
-        
-        if (nextLevel && nextLevel.donations_received === 0) {
-          // This level is completed and the next level hasn't started - check if upgrade is available
-          try {
-            setLoading(true);
-            const progress = await donationAPI.getMyLevelProgress();
-            // Check if the user has enough balance and can upgrade
-            // For now, we'll assume upgrade is available if level is completed
-            // The actual upgrade availability will be checked when user tries to upgrade
-            return true;
-          } catch (error) {
-            console.error('Error checking upgrade availability:', error);
-            return false;
-          } finally {
-            setLoading(false);
-          }
-        }
-      }
-    }
-    return false;
+  const checkForPendingUpgrade = () => {
+    return hasUpgradeAvailable();
   };
 
   const handleUpgradeClick = async (fromLevel: number) => {
     try {
-      setLoading(true);
-      
-      // Get current progress to check upgrade availability
-      const progress = await donationAPI.getMyLevelProgress();
-      const completedLevel = progress.find(p => p.level === fromLevel && p.level_completed);
+      // Get completed level data
+      const completedLevel = getCompletedLevels().find(p => p.level === fromLevel);
       
       if (completedLevel) {
-        // Create a mock upgrade info for now
-        // In a real scenario, this would come from the backend
+        // Create a mock upgrade info based on level
+        // In a real scenario, this would come from the backend when user tries to upgrade
         const mockUpgradeInfo: UpgradeAvailable = {
           can_upgrade: true,
           from_level: fromLevel,
@@ -100,8 +78,11 @@ export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: L
           requirements: {
             upgrade_amount: fromLevel === 1 ? 200 : fromLevel === 2 ? 600 : 0,
             cascade_amount: fromLevel === 1 ? 100 : fromLevel === 2 ? 300 : 0,
+            reinjection_amount: fromLevel === 2 ? 300 : undefined,
             total: fromLevel === 1 ? 300 : fromLevel === 2 ? 900 : 0,
-            description: `Upgrade para Nível ${fromLevel + 1} + Cascata N${fromLevel}`
+            description: fromLevel === 1 
+              ? `Upgrade para Nível ${fromLevel + 1} + Cascata N${fromLevel}` 
+              : `Upgrade para Nível ${fromLevel + 1} + Reinjeção N${fromLevel}`
           },
           user_balance: completedLevel.total_received,
           can_afford: completedLevel.total_received >= (fromLevel === 1 ? 300 : 900)
@@ -112,8 +93,6 @@ export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: L
       }
     } catch (error) {
       console.error('Error preparing upgrade:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -121,7 +100,8 @@ export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: L
     console.log('🎉 Upgrade successful! New level:', newLevel);
     setShowUpgradeModal(false);
     setUpgradeInfo(null);
-    onUpgradeSuccess();
+    refetch(); // Refresh progress data
+    onUpgradeSuccess?.(); // Call optional callback
   };
 
   const closeUpgradeModal = () => {
@@ -145,8 +125,9 @@ export default function LevelProgressCard({ levelProgress, onUpgradeSuccess }: L
             const isCompleted = level.level_completed;
             const isInProgress = level.donations_received > 0 && !isCompleted;
             const isLocked = level.donations_received === 0 && !isCompleted && index > 0;
-            const hasUpgradeAvailable = isCompleted && index < levelProgress.length - 1 && 
-              levelProgress[index + 1]?.donations_received === 0;
+            const hasUpgradeAvailable = isCompleted && 
+              checkForPendingUpgrade() &&
+              levelProgress.find(l => l.level === level.level + 1)?.donations_received === 0;
 
             return (
               <div

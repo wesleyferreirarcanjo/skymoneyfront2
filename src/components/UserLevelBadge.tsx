@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { LevelProgress } from '../types/donation';
-import { donationAPI } from '../lib/api';
+import { useUserProgress } from '../hooks/useUserProgress';
 import { TrendingUp, CheckCircle, Clock, Lock } from 'lucide-react';
 
 interface UserLevelBadgeProps {
@@ -8,33 +6,13 @@ interface UserLevelBadgeProps {
 }
 
 export default function UserLevelBadge({ className = '' }: UserLevelBadgeProps) {
-  const [levelProgress, setLevelProgress] = useState<LevelProgress[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentLevel, setCurrentLevel] = useState(1);
+  const { progress: levelProgress, loading, getCurrentLevel, getCompletedLevels } = useUserProgress();
 
-  useEffect(() => {
-    loadLevelProgress();
-  }, []);
-
-  const loadLevelProgress = async () => {
-    try {
-      const progress = await donationAPI.getMyLevelProgress();
-      setLevelProgress(progress);
-      
-      // Find current level (highest completed level + 1)
-      const completedLevels = progress.filter(level => level.level_completed);
-      if (completedLevels.length > 0) {
-        const highestCompleted = Math.max(...completedLevels.map(l => l.level));
-        setCurrentLevel(highestCompleted + 1);
-      } else {
-        setCurrentLevel(1);
-      }
-    } catch (error) {
-      console.error('Error loading level progress:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Find current level (highest completed level + 1)
+  const completedLevels = getCompletedLevels();
+  const currentLevel = completedLevels.length > 0 
+    ? Math.max(...completedLevels.map(l => l.level)) + 1 
+    : 1;
 
   const getLevelColor = (level: number) => {
     switch (level) {

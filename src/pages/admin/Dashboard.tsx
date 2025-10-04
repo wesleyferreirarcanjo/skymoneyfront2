@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authAPI, donationAPI } from '../../lib/api';
+import { donationsService } from '../../services/donations.service';
 import { Users, BarChart3, DollarSign, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { UserRole } from '../../types/user';
 
@@ -52,7 +53,7 @@ export default function AdminDashboard() {
 
       // Fetch level stats for all levels
       const levels = [1, 2, 3];
-      const levelStatsPromises = levels.map(level => donationAPI.getLevelStats(level));
+        const levelStatsPromises = levels.map(level => donationsService.getLevelStats(level));
       const levelStatsData = await Promise.all(levelStatsPromises);
       setLevelStats(levelStatsData);
 
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
       setError(null);
       setPullResult(null);
 
-      const result = await donationAPI.generateMonthlyPull();
+        const result = await donationsService.generateMonthlyPull();
       setPullResult(result);
       
       // Refresh stats after generating pull

@@ -94,8 +94,9 @@ export interface LevelProgress {
 }
 
 export interface UpgradeRequirements {
-  upgrade_amount: number;
-  cascade_amount: number;
+  upgrade_amount?: number;
+  cascade_amount?: number;
+  reinjection_amount?: number;
   total: number;
   description: string;
 }
@@ -103,7 +104,7 @@ export interface UpgradeRequirements {
 export interface UpgradeAvailable {
   can_upgrade: boolean;
   from_level: number;
-  to_level: number;
+  to_level: number | null;
   requirements: UpgradeRequirements;
   user_balance: number;
   can_afford: boolean;
@@ -128,6 +129,7 @@ export interface AcceptUpgradeResponse {
     type: string;
     level: number;
     amount: number;
+    position?: number;
   }>;
 }
 
