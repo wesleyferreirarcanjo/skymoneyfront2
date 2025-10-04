@@ -67,8 +67,14 @@ export const donationsService = {
     };
   }> {
     try {
-      const result = await makeAuthenticatedRequest('/donations/admin/generate-monthly-pull', {
+      const result = await makeAuthenticatedRequest('/donations/admin/cycle/1/start', {
         method: 'POST',
+        body: JSON.stringify({
+          donorsCount: 3,
+          amount: 100,
+          type: "PULL",
+          deadlineDays: 30
+        }),
       });
       return result;
     } catch (error: any) {
