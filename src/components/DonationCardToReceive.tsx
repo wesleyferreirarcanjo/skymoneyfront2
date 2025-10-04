@@ -55,15 +55,15 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     }
   };
 
-  const getInitials = (name?: string): string => {
-    if (!name) return '';
-    const parts = name.split(' ');
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
   };
 
-  const getAvatarColor = (name?: string): string => {
-    if (!name) return 'bg-gray-500';
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
     const colors = [
       'bg-blue-500',
       'bg-green-500',
@@ -77,6 +77,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
       'bg-cyan-500',
     ];
     
+    // Simple hash function to pick a color consistently
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -244,12 +245,14 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
                 <img
                   className="h-12 w-12 rounded-full object-cover"
                   src={formatAvatarUrl(donation.donor.avatarUrl)!}
-                  alt={donation.donor.name}
+                  alt={donation.donor?.firstName && donation.donor?.lastName 
+                    ? `${donation.donor.firstName} ${donation.donor.lastName}`
+                    : donation.donor?.name}
                 />
               ) : (
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.donor?.name)}`}>
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.donor?.firstName, donation.donor?.lastName)}`}>
                   <span className="text-white text-lg font-semibold">
-                    {getInitials(donation.donor?.name)}
+                    {getInitials(donation.donor?.firstName, donation.donor?.lastName)}
                   </span>
                 </div>
               )}
@@ -259,10 +262,47 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {donation.donor?.name}
+                  {donation.donor?.firstName && donation.donor?.lastName 
+                    ? `${donation.donor.firstName} ${donation.donor.lastName}`
+                    : donation.donor?.name}
                 </h3>
                 <span className="text-sm text-gray-500">#{donation.donor?.id.slice(-3)}</span>
               </div>
+
+              {/* User Details */}
+              {(donation.donor?.firstName || donation.donor?.email || donation.donor?.phone || donation.donor?.pixOwnerName) && (
+                <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 mb-2">Informações do Doador:</p>
+                  <div className="space-y-1">
+                    {(donation.donor?.firstName || donation.donor?.lastName) && (
+                      <div className="flex items-center text-sm">
+                        <span className="text-blue-600 w-20">Nome:</span>
+                        <span className="text-blue-900 font-medium">
+                          {donation.donor.firstName} {donation.donor.lastName}
+                        </span>
+                      </div>
+                    )}
+                    {donation.donor?.email && (
+                      <div className="flex items-center text-sm">
+                        <span className="text-blue-600 w-20">Email:</span>
+                        <span className="text-blue-900 font-medium">{donation.donor.email}</span>
+                      </div>
+                    )}
+                    {donation.donor?.phone && (
+                      <div className="flex items-center text-sm">
+                        <span className="text-blue-600 w-20">Telefone:</span>
+                        <span className="text-blue-900 font-medium">{donation.donor.phone}</span>
+                      </div>
+                    )}
+                    {donation.donor?.pixOwnerName && (
+                      <div className="flex items-center text-sm">
+                        <span className="text-blue-600 w-20">Titular PIX:</span>
+                        <span className="text-blue-900 font-medium">{donation.donor.pixOwnerName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Amount */}
               <div className="mb-3">
@@ -278,7 +318,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
 
               {/* WhatsApp Contact */}
               {(() => {
-                const phone = getPhoneFromProfileOrPix((donation.donor as any)?.phone, donation.donor?.pixKey);
+                const phone = getPhoneFromProfileOrPix(donation.donor?.phone, donation.donor?.pixKey);
                 return phone ? (
                   <div className="mb-3">
                     <a

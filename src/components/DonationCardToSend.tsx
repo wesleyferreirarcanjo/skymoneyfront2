@@ -43,15 +43,15 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
     }
   };
 
-  const getInitials = (name?: string): string => {
-    if (!name) return '';
-    const parts = name.split(' ');
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
   };
 
-  const getAvatarColor = (name?: string): string => {
-    if (!name) return 'bg-gray-500';
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
     const colors = [
       'bg-blue-500',
       'bg-green-500',
@@ -65,6 +65,7 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
       'bg-cyan-500',
     ];
     
+    // Simple hash function to pick a color consistently
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -121,7 +122,7 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
   const handleCopyPixKey = async () => {
     try {
-      const pixKey = (donation.receiver as any)?.pixCopyPaste || (donation.receiver as any)?.pixKey;
+      const pixKey = donation.receiver?.pixCopyPaste || donation.receiver?.pixKey;
       if (pixKey) {
         await navigator.clipboard.writeText(pixKey);
         setCopied(true);
@@ -220,12 +221,14 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               <img
                 className="h-12 w-12 rounded-full object-cover"
                 src={formatAvatarUrl(donation.receiver.avatarUrl)!}
-                alt={donation.receiver.name}
+                alt={donation.receiver?.firstName && donation.receiver?.lastName 
+                  ? `${donation.receiver.firstName} ${donation.receiver.lastName}`
+                  : donation.receiver?.name}
               />
             ) : (
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.receiver?.name)}`}>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.receiver?.firstName, donation.receiver?.lastName)}`}>
                 <span className="text-white text-lg font-semibold">
-                  {getInitials(donation.receiver?.name)}
+                  {getInitials(donation.receiver?.firstName, donation.receiver?.lastName)}
                 </span>
               </div>
             )}
@@ -235,10 +238,47 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2 mb-2">
               <h3 className="text-lg font-semibold text-gray-900">
-                {donation.receiver?.name}
+                {donation.receiver?.firstName && donation.receiver?.lastName 
+                  ? `${donation.receiver.firstName} ${donation.receiver.lastName}`
+                  : donation.receiver?.name}
               </h3>
               <span className="text-sm text-gray-500">#{donation.receiver?.id.slice(-3)}</span>
             </div>
+
+            {/* User Details */}
+            {(donation.receiver?.firstName || donation.receiver?.email || donation.receiver?.phone || donation.receiver?.pixOwnerName) && (
+              <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Informações do Recebedor:</p>
+                <div className="space-y-1">
+                  {(donation.receiver?.firstName || donation.receiver?.lastName) && (
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 w-20">Nome:</span>
+                      <span className="text-gray-900 font-medium">
+                        {donation.receiver.firstName} {donation.receiver.lastName}
+                      </span>
+                    </div>
+                  )}
+                  {donation.receiver?.email && (
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 w-20">Email:</span>
+                      <span className="text-gray-900 font-medium">{donation.receiver.email}</span>
+                    </div>
+                  )}
+                  {donation.receiver?.phone && (
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 w-20">Telefone:</span>
+                      <span className="text-gray-900 font-medium">{donation.receiver.phone}</span>
+                    </div>
+                  )}
+                  {donation.receiver?.pixOwnerName && (
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 w-20">Titular PIX:</span>
+                      <span className="text-gray-900 font-medium">{donation.receiver.pixOwnerName}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Amount */}
             <div className="mb-3">
@@ -257,13 +297,13 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               <p className="text-sm text-gray-500 mb-3">Métodos de Pagamento:</p>
               
               {/* PIX */}
-              {(donation.receiver as any)?.pixKey && (
+              {donation.receiver?.pixKey && (
                 <div className="mb-3">
                   <div className="bg-gray-50 p-3 rounded-md">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-gray-900">PIX</p>
-                        <p className="text-sm font-mono text-gray-700">{(donation.receiver as any).pixCopyPaste || (donation.receiver as any).pixKey}</p>
+                        <p className="text-sm font-mono text-gray-700">{donation.receiver.pixCopyPaste || donation.receiver.pixKey}</p>
                       </div>
                       <button
                         onClick={handleCopyPixKey}
@@ -278,10 +318,10 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
                         <span className="text-xs">{copied ? 'Copiado!' : 'Copiar'}</span>
                       </button>
                     </div>
-                    {(donation.receiver as any)?.pixQrCode && (
+                    {donation.receiver?.pixQrCode && (
                       <div className="flex justify-center">
                         <img 
-                          src={(donation.receiver as any).pixQrCode} 
+                          src={donation.receiver.pixQrCode} 
                           alt="QR Code PIX" 
                           className="w-24 h-24 border border-gray-200 rounded"
                         />
@@ -292,16 +332,16 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               )}
 
               {/* Bitcoin */}
-              {(donation.receiver as any)?.btcAddress && (
+              {donation.receiver?.btcAddress && (
                 <div className="mb-3">
                   <div className="bg-orange-50 p-3 rounded-md border border-orange-200">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-orange-900">Bitcoin (BTC)</p>
-                        <p className="text-sm font-mono text-orange-700 break-all">{(donation.receiver as any).btcAddress}</p>
+                        <p className="text-sm font-mono text-orange-700 break-all">{donation.receiver.btcAddress}</p>
                       </div>
                       <button
-                        onClick={() => navigator.clipboard.writeText((donation.receiver as any).btcAddress)}
+                        onClick={() => donation.receiver?.btcAddress && navigator.clipboard.writeText(donation.receiver.btcAddress)}
                         className="flex items-center space-x-1 text-orange-600 hover:text-orange-800 transition-colors"
                         title="Copiar endereço Bitcoin"
                       >
@@ -309,10 +349,10 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
                         <span className="text-xs">Copiar</span>
                       </button>
                     </div>
-                    {(donation.receiver as any)?.btcQrCode && (
+                    {donation.receiver?.btcQrCode && (
                       <div className="flex justify-center">
                         <img 
-                          src={(donation.receiver as any).btcQrCode} 
+                          src={donation.receiver.btcQrCode} 
                           alt="QR Code Bitcoin" 
                           className="w-24 h-24 border border-orange-200 rounded"
                         />
@@ -323,16 +363,16 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
               )}
 
               {/* USDT */}
-              {(donation.receiver as any)?.usdtAddress && (
+              {donation.receiver?.usdtAddress && (
                 <div className="mb-3">
                   <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-blue-900">USDT (Tether)</p>
-                        <p className="text-sm font-mono text-blue-700 break-all">{(donation.receiver as any).usdtAddress}</p>
+                        <p className="text-sm font-mono text-blue-700 break-all">{donation.receiver.usdtAddress}</p>
                       </div>
                       <button
-                        onClick={() => navigator.clipboard.writeText((donation.receiver as any).usdtAddress)}
+                        onClick={() => donation.receiver?.usdtAddress && navigator.clipboard.writeText(donation.receiver.usdtAddress)}
                         className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
                         title="Copiar endereço USDT"
                       >
@@ -340,10 +380,10 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
                         <span className="text-xs">Copiar</span>
                       </button>
                     </div>
-                    {(donation.receiver as any)?.usdtQrCode && (
+                    {donation.receiver?.usdtQrCode && (
                       <div className="flex justify-center">
                         <img 
-                          src={(donation.receiver as any).usdtQrCode} 
+                          src={donation.receiver.usdtQrCode} 
                           alt="QR Code USDT" 
                           className="w-24 h-24 border border-blue-200 rounded"
                         />
@@ -356,7 +396,7 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
             {/* WhatsApp Contact */}
             {(() => {
-              const phone = getPhoneFromProfileOrPix(donation.receiver as any && (donation.receiver as any).phone, donation.receiver?.pixKey);
+              const phone = getPhoneFromProfileOrPix(donation.receiver?.phone, donation.receiver?.pixKey);
               return phone ? (
                 <div className="mb-4">
                   <a

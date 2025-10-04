@@ -43,6 +43,34 @@ export interface UserPublicProfile {
   name: string;
   avatarUrl?: string;
   pixKey?: string;
+  // Extended user information from backend
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  cpf?: string;
+  birthDate?: string;
+  role?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  cep?: string;
+  address?: string;
+  addressNumber?: string;
+  bank?: string;
+  agency?: string;
+  account?: string;
+  pixKeyType?: string;
+  pixCopyPaste?: string;
+  pixQrCode?: string;
+  btcAddress?: string;
+  btcQrCode?: string;
+  usdtAddress?: string;
+  usdtQrCode?: string;
+  pixOwnerName?: string;
+  adminApproved?: boolean;
+  adminApprovedAt?: string;
+  adminApprovedBy?: string | null;
 }
 
 export interface DonationHistoryItem extends Donation {
