@@ -28,7 +28,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function to make authenticated requests
-const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}): Promise<any> => {
+export const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}): Promise<any> => {
   const token = getAuthToken();
 
   const headers: Record<string, string> = {
