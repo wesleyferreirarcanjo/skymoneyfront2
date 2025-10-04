@@ -57,14 +57,9 @@ export const donationsService = {
    * Gerar PULL mensal (Admin)
    */
   async generateMonthlyPull(): Promise<{
-    message: string;
-    created: number;
-    errors: any[];
-    breakdown: {
-      n1: number;
-      n2: number;
-      n3: number;
-    };
+    createdCount: number;
+    skippedExisting: number;
+    receiversProcessed: number;
   }> {
     try {
       const result = await makeAuthenticatedRequest('/donations/admin/cycle/1/start', {

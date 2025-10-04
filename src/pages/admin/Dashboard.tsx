@@ -19,14 +19,9 @@ interface LevelStats {
 }
 
 interface MonthlyPullResult {
-  message: string;
-  created: number;
-  errors: any[];
-  breakdown: {
-    n1: number;
-    n2: number;
-    n3: number;
-  };
+  createdCount: number;
+  skippedExisting: number;
+  receiversProcessed: number;
 }
 
 export default function AdminDashboard() {
@@ -134,10 +129,12 @@ export default function AdminDashboard() {
             <div>
               <h3 className="font-semibold text-green-800">PULL Mensal Gerado com Sucesso!</h3>
               <p className="text-green-700">
-                {pullResult.message} - Total: {pullResult.created} doações criadas
+                Ciclo de doações iniciado com sucesso!
               </p>
               <div className="mt-2 text-sm text-green-600">
-                N1: {pullResult.breakdown.n1} | N2: {pullResult.breakdown.n2} | N3: {pullResult.breakdown.n3}
+                <div>✓ {pullResult.createdCount} doações criadas</div>
+                <div>✓ {pullResult.receiversProcessed} receptores processados</div>
+                <div>• {pullResult.skippedExisting} já existentes (ignoradas)</div>
               </div>
             </div>
           </div>
