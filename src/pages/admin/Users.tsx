@@ -346,21 +346,7 @@ export default function Users() {
       }
     }
 
-    // Validate Bitcoin address if provided
-    if (data.btcAddress) {
-      const btcRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$/;
-      if (!btcRegex.test(data.btcAddress)) {
-        errors.btcAddress = 'Endereço Bitcoin inválido';
-      }
-    }
-
-    // Validate USDT address if provided
-    if (data.usdtAddress) {
-      const usdtRegex = /^0x[a-fA-F0-9]{40}$/;
-      if (!usdtRegex.test(data.usdtAddress)) {
-        errors.usdtAddress = 'Endereço USDT inválido';
-      }
-    }
+    // Bitcoin and USDT address validations removed - admin can edit freely
 
     // Validate password if provided
     if (data.password && data.password.length < 6) {
