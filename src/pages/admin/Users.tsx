@@ -277,6 +277,20 @@ export default function Users() {
     return null;
   };
 
+  const formatQrCodeImage = (qrCode?: string): string | null => {
+    if (!qrCode || qrCode.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (qrCode.startsWith('data:image/')) return qrCode;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(qrCode)) {
+      return `data:image/png;base64,${qrCode}`;
+    }
+    
+    return null;
+  };
+
   const getWhatsAppLink = (phone?: string): string => {
     if (!phone) return '#';
     // Remove all non-numeric characters
@@ -979,17 +993,19 @@ export default function Users() {
                           <label className="text-sm font-medium text-gray-500">Nome do Titular</label>
                           <p className="text-sm text-gray-900">{selectedUser.pixOwnerName}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">QR Code PIX</label>
-                          <div className="mt-2">
-                            <img
-                              src={`data:image/png;base64,${selectedUser.pixQrCode}`}
-                              alt="PIX QR Code"
-                              className="border border-gray-300 rounded-lg"
-                              style={{ width: '200px', height: '200px' }}
-                            />
+                        {formatQrCodeImage(selectedUser.pixQrCode) && (
+                          <div>
+                            <label className="text-sm font-medium text-gray-500">QR Code PIX</label>
+                            <div className="mt-2">
+                              <img
+                                src={formatQrCodeImage(selectedUser.pixQrCode)!}
+                                alt="PIX QR Code"
+                                className="border border-gray-300 rounded-lg"
+                                style={{ width: '200px', height: '200px' }}
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
 
@@ -1005,34 +1021,38 @@ export default function Users() {
                             <div>
                               <label className="text-sm font-medium text-gray-500">Endereço Bitcoin</label>
                               <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.btcAddress}</p>
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">QR Code Bitcoin</label>
-                                <div className="mt-2">
-                                  <img
-                                    src={`data:image/png;base64,${selectedUser.btcQrCode}`}
-                                    alt="Bitcoin QR Code"
-                                    className="border border-gray-300 rounded-lg"
-                                    style={{ width: '200px', height: '200px' }}
-                                  />
+                              {formatQrCodeImage(selectedUser.btcQrCode) && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-500">QR Code Bitcoin</label>
+                                  <div className="mt-2">
+                                    <img
+                                      src={formatQrCodeImage(selectedUser.btcQrCode)!}
+                                      alt="Bitcoin QR Code"
+                                      className="border border-gray-300 rounded-lg"
+                                      style={{ width: '200px', height: '200px' }}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                           )}
                           {selectedUser.usdtAddress && (
                             <div>
                               <label className="text-sm font-medium text-gray-500">Endereço USDT</label>
                               <p className="text-sm text-gray-900 font-mono break-all mb-2">{selectedUser.usdtAddress}</p>
-                              <div>
-                                <label className="text-sm font-medium text-gray-500">QR Code USDT</label>
-                                <div className="mt-2">
-                                  <img
-                                    src={`data:image/png;base64,${selectedUser.usdtQrCode}`}
-                                    alt="USDT QR Code"
-                                    className="border border-gray-300 rounded-lg"
-                                    style={{ width: '200px', height: '200px' }}
-                                  />
+                              {formatQrCodeImage(selectedUser.usdtQrCode) && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-500">QR Code USDT</label>
+                                  <div className="mt-2">
+                                    <img
+                                      src={formatQrCodeImage(selectedUser.usdtQrCode)!}
+                                      alt="USDT QR Code"
+                                      className="border border-gray-300 rounded-lg"
+                                      style={{ width: '200px', height: '200px' }}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1431,9 +1451,9 @@ export default function Users() {
                           <Upload className="h-4 w-4 mr-2" />
                           Upload QR Code
                         </label>
-                        {editFormData.pixQrCode && (
+                        {formatQrCodeImage(editFormData.pixQrCode) && (
                           <img
-                            src={`data:image/png;base64,${editFormData.pixQrCode}`}
+                            src={formatQrCodeImage(editFormData.pixQrCode)!}
                             alt="PIX QR Code"
                             className="w-16 h-16 border border-gray-300 rounded"
                           />
@@ -1499,9 +1519,9 @@ export default function Users() {
                           <Upload className="h-4 w-4 mr-2" />
                           Upload QR Code
                         </label>
-                        {editFormData.btcQrCode && (
+                        {formatQrCodeImage(editFormData.btcQrCode) && (
                           <img
-                            src={`data:image/png;base64,${editFormData.btcQrCode}`}
+                            src={formatQrCodeImage(editFormData.btcQrCode)!}
                             alt="Bitcoin QR Code"
                             className="w-16 h-16 border border-gray-300 rounded"
                           />
@@ -1562,9 +1582,9 @@ export default function Users() {
                           <Upload className="h-4 w-4 mr-2" />
                           Upload QR Code
                         </label>
-                        {editFormData.usdtQrCode && (
+                        {formatQrCodeImage(editFormData.usdtQrCode) && (
                           <img
-                            src={`data:image/png;base64,${editFormData.usdtQrCode}`}
+                            src={formatQrCodeImage(editFormData.usdtQrCode)!}
                             alt="USDT QR Code"
                             className="w-16 h-16 border border-gray-300 rounded"
                           />
