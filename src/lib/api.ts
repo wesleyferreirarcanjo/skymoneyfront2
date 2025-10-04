@@ -38,6 +38,20 @@ export const makeAuthenticatedRequest = async (url: string, options: RequestInit
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn('⚠️ No auth token found for request:', url);
+  }
+
+  // Log request details for debugging
+  if (url.includes('accept-upgrade')) {
+    console.log('🔍 [DEBUG] Accept Upgrade Request:', {
+      url: `${API_BASE_URL}${url}`,
+      method: options.method || 'GET',
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
+      body: options.body,
+      headers: { ...headers, Authorization: headers.Authorization ? `Bearer ${headers.Authorization.substring(7, 27)}...` : 'none' }
+    });
   }
 
   try {
