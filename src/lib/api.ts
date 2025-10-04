@@ -7,12 +7,16 @@ import {
   DonationHistory,
   SendComprovanteRequest,
   ConfirmDonationRequest,
+  ConfirmDonationResponse,
   ComprovanteUrlResponse,
   DonationReportRequest,
   DonationReportResponse,
   DonationReport,
   ReportResolutionRequest,
-  ReportResolutionResponse
+  ReportResolutionResponse,
+  LevelProgress,
+  AcceptUpgradeRequest,
+  AcceptUpgradeResponse
 } from '../types/donation';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -323,7 +327,7 @@ export const donationAPI = {
   },
 
   // Confirm donation receipt
-  confirmDonation: async (data: ConfirmDonationRequest): Promise<{ message: string }> => {
+  confirmDonation: async (data: ConfirmDonationRequest): Promise<ConfirmDonationResponse> => {
     console.log('🚀 API: confirmDonation called with donationId:', data.donationId);
     try {
       const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/confirm`, {
@@ -551,6 +555,66 @@ export const donationAPI = {
   getUserReportDetails: async (reportId: string): Promise<DonationReport> => {
     try {
       const result = await makeAuthenticatedRequest(`/donations/reports/${reportId}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // New level system endpoints
+  getMyLevelProgress: async (): Promise<LevelProgress[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/my-level-progress');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  acceptUpgrade: async (data: AcceptUpgradeRequest): Promise<AcceptUpgradeResponse> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/accept-upgrade', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Admin endpoints for level management
+  generateMonthlyPull: async (): Promise<{
+    message: string;
+    created: number;
+    errors: any[];
+    breakdown: {
+      n1: number;
+      n2: number;
+      n3: number;
+    };
+  }> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/admin/generate-monthly-pull', {
+        method: 'POST',
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  getLevelStats: async (level: number): Promise<{
+    level: number;
+    totalUsers: number;
+    activeUsers: number;
+    completedUsers: number;
+    averageProgress: number;
+    totalDonationsReceived: number;
+    totalAmountReceived: number;
+  }> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/admin/level-stats/${level}`);
       return result;
     } catch (error: any) {
       throw error;

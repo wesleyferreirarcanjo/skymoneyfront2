@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Profile from './Profile';
 import UserDonationsPage from './UserDonationsPage';
 import UserReports from './UserReports';
+import UserLevelBadge from '../../components/UserLevelBadge';
 import { User as UserType } from '../../types/user';
 
 type UserView = 'home' | 'donations' | 'reports' | 'profile';
@@ -94,8 +95,13 @@ export default function UserLayout() {
             <div className="max-w-6xl mx-auto">
               {/* Header */}
               <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Início</h1>
-                <p className="text-gray-600">Bem-vindo ao SkyMoney</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800">Início</h1>
+                    <p className="text-gray-600">Bem-vindo ao SkyMoney</p>
+                  </div>
+                  <UserLevelBadge />
+                </div>
               </div>
 
               {/* Verification Status */}

@@ -82,6 +82,55 @@ export interface ConfirmDonationRequest {
   donationId: string;
 }
 
+// New types for level system
+export interface LevelProgress {
+  level: number;
+  donations_received: number;
+  donations_required: number;
+  total_received: number;
+  progress_percentage: number;
+  level_completed: boolean;
+  level_completed_at: string | null;
+}
+
+export interface UpgradeRequirements {
+  upgrade_amount: number;
+  cascade_amount: number;
+  total: number;
+  description: string;
+}
+
+export interface UpgradeAvailable {
+  can_upgrade: boolean;
+  from_level: number;
+  to_level: number;
+  requirements: UpgradeRequirements;
+  user_balance: number;
+  can_afford: boolean;
+}
+
+export interface ConfirmDonationResponse {
+  message: string;
+  level_completed?: boolean;
+  completed_level?: number;
+  upgrade_available?: UpgradeAvailable;
+}
+
+export interface AcceptUpgradeRequest {
+  from_level: number;
+  to_level: number;
+}
+
+export interface AcceptUpgradeResponse {
+  message: string;
+  new_level: number;
+  donations_created: Array<{
+    type: string;
+    level: number;
+    amount: number;
+  }>;
+}
+
 export interface ComprovanteUrlResponse {
   comprovanteUrl: string;
 }

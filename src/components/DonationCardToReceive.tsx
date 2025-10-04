@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest } from '../types/donation';
+import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest, UpgradeAvailable } from '../types/donation';
 import { donationAPI } from '../lib/api';
 import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
+import UpgradeModal from './UpgradeModal';
 
 interface DonationCardToReceiveProps {
   donation: Donation;
@@ -20,6 +21,8 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     reason: '',
     additionalInfo: ''
   });
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState<UpgradeAvailable | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -145,8 +148,16 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
       setConfirming(true);
       setError(null);
       console.log('🔄 Making API call to confirm donation...');
-      await donationAPI.confirmDonation({ donationId: donation.id });
-      console.log('✅ Donation confirmed successfully');
+      const response = await donationAPI.confirmDonation({ donationId: donation.id });
+      console.log('✅ Donation confirmed successfully, response:', response);
+      
+      // Check if level was completed and upgrade is available
+      if (response.level_completed && response.upgrade_available) {
+        console.log('🎉 Level completed! Upgrade available:', response.upgrade_available);
+        setUpgradeInfo(response.upgrade_available);
+        setShowUpgradeModal(true);
+      }
+      
       onUpdate(); // Refresh the donations list
     } catch (err: any) {
       console.error('❌ Error confirming donation:', err);
@@ -203,6 +214,20 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     setReportData({ reason: '', additionalInfo: '' });
     setError(null);
     setReportSuccess(false);
+  };
+
+  const handleUpgradeSuccess = (newLevel: number) => {
+    console.log('🎉 Upgrade successful! New level:', newLevel);
+    // Close upgrade modal
+    setShowUpgradeModal(false);
+    setUpgradeInfo(null);
+    // Refresh data to show new level and updated donations
+    onUpdate();
+  };
+
+  const closeUpgradeModal = () => {
+    setShowUpgradeModal(false);
+    setUpgradeInfo(null);
   };
 
   const isComprovanteSent = donation.status === DonationStatus.PENDING_CONFIRMATION;
@@ -540,6 +565,16 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
             </div>
           </div>
         </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && upgradeInfo && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={closeUpgradeModal}
+          upgradeInfo={upgradeInfo}
+          onUpgradeSuccess={handleUpgradeSuccess}
+        />
       )}
     </>
   );
