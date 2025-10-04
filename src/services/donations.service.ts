@@ -18,7 +18,7 @@ export const donationsService = {
       return result;
     } catch (error: any) {
       console.error('Error fetching level progress:', error);
-      throw new Error(error.response?.data?.message || 'Erro ao carregar progresso');
+      throw error;
     }
   },
 
@@ -34,8 +34,7 @@ export const donationsService = {
       return result;
     } catch (error: any) {
       console.error('Error accepting upgrade:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao processar upgrade';
-      throw new Error(errorMessage);
+      throw error;
     }
   },
 
@@ -50,8 +49,7 @@ export const donationsService = {
       return result;
     } catch (error: any) {
       console.error('Error confirming donation:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao confirmar doação';
-      throw new Error(errorMessage);
+      throw error;
     }
   },
 
@@ -75,8 +73,7 @@ export const donationsService = {
       return result;
     } catch (error: any) {
       console.error('Error generating monthly pull:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao gerar PULL mensal';
-      throw new Error(errorMessage);
+      throw error;
     }
   },
 
@@ -97,8 +94,7 @@ export const donationsService = {
       return result;
     } catch (error: any) {
       console.error('Error fetching level stats:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao carregar estatísticas';
-      throw new Error(errorMessage);
+      throw error;
     }
   },
 };
