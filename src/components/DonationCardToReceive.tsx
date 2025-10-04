@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest, UpgradeAvailable } from '../types/donation';
 import { donationAPI } from '../lib/api';
 import { donationsService } from '../services/donations.service';
-import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
+import { Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
 import UpgradeModal from './UpgradeModal';
 
 interface DonationCardToReceiveProps {
@@ -241,7 +241,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
           <div className="flex items-start space-x-4 flex-1">
             {/* Donor Avatar */}
             <div className="flex-shrink-0">
-              {formatAvatarUrl(donation.donor?.avatarUrl) ? (
+              {donation.donor && formatAvatarUrl(donation.donor.avatarUrl) ? (
                 <img
                   className="h-12 w-12 rounded-full object-cover"
                   src={formatAvatarUrl(donation.donor.avatarUrl)!}
@@ -260,13 +260,17 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
 
             {/* Donation Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
                   {donation.donor?.firstName && donation.donor?.lastName 
                     ? `${donation.donor.firstName} ${donation.donor.lastName}`
                     : donation.donor?.name}
                 </h3>
-                <span className="text-sm text-gray-500">#{donation.donor?.id.slice(-3)}</span>
+                {donation.donor_queue_position !== undefined && donation.donor_queue_level !== undefined && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Fila N{donation.donor_queue_level} - Pos #{donation.donor_queue_position}
+                  </span>
+                )}
               </div>
 
               {/* User Details */}

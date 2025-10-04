@@ -236,13 +236,17 @@ export default function DonationCardToSend({ donation, onUpdate }: DonationCardT
 
           {/* Donation Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 {donation.receiver?.firstName && donation.receiver?.lastName 
                   ? `${donation.receiver.firstName} ${donation.receiver.lastName}`
                   : donation.receiver?.name}
               </h3>
-              <span className="text-sm text-gray-500">#{donation.receiver?.id.slice(-3)}</span>
+              {donation.receiver_queue_position !== undefined && donation.receiver_queue_level !== undefined && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Fila N{donation.receiver_queue_level} - Pos #{donation.receiver_queue_position}
+                </span>
+              )}
             </div>
 
             {/* User Details */}

@@ -27,6 +27,11 @@ export interface Donation {
   completedAt?: string;
   donor?: UserPublicProfile;
   receiver?: UserPublicProfile;
+  // Queue position fields
+  donor_queue_position?: number;
+  donor_queue_level?: number;
+  receiver_queue_position?: number;
+  receiver_queue_level?: number;
   // Report fields
   is_reported?: boolean;
   report_reason?: string;
