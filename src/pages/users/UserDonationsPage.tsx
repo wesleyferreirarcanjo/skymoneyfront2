@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
-import { donationAPI } from '../lib/api';
-import type { Donation, DonationStats, DonationHistory } from '../types/donation';
+import { donationAPI } from '../../lib/api';
+import type { Donation, DonationStats, DonationHistory, LevelProgress } from '../../types/donation';
 import { AlertCircle, Clock, CheckCircle, History, DollarSign } from 'lucide-react';
-import DonationCardToSend from '../components/DonationCardToSend';
-import DonationCardToReceive from '../components/DonationCardToReceive';
-import DonationHistoryComponent from '../components/DonationHistory';
+import DonationCardToSend from '../../components/DonationCardToSend';
+import DonationCardToReceive from '../../components/DonationCardToReceive';
+import DonationHistoryComponent from '../../components/DonationHistory';
+import LevelProgressCard from '../../components/LevelProgressCard';
 
-type TabType = 'to-send' | 'to-receive' | 'history';
+type TabType = 'to-send' | 'to-receive' | 'history' | 'levels';
 
-export default function DonationsPage() {
+export default function UserDonationsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('to-send');
   const [donationsToSend, setDonationsToSend] = useState<Donation[]>([]);
   const [donationsToReceive, setDonationsToReceive] = useState<Donation[]>([]);
   const [donationHistory, setDonationHistory] = useState<DonationHistory | null>(null);
   const [stats, setStats] = useState<DonationStats | null>(null);
+  const [levelProgress, setLevelProgress] = useState<LevelProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +31,10 @@ export default function DonationsPage() {
       // Load stats
       const statsData = await donationAPI.getDonationStats();
       setStats(statsData);
+
+      // Load level progress
+      const progressData = await donationAPI.getMyLevelProgress();
+      setLevelProgress(progressData);
 
       // Load donations based on active tab
       if (activeTab === 'to-send') {
@@ -97,6 +103,8 @@ export default function DonationsPage() {
         return donationsToReceive.length;
       case 'history':
         return donationHistory?.data.length || 0;
+      case 'levels':
+        return levelProgress.length;
       default:
         return 0;
     }
@@ -228,6 +236,23 @@ export default function DonationsPage() {
                   </span>
                 )}
               </button>
+
+              <button
+                onClick={() => handleTabChange('levels')}
+                className={`flex items-center px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'levels'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Níveis
+                {getTabCount('levels') > 0 && (
+                  <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                    {getTabCount('levels')}
+                  </span>
+                )}
+              </button>
             </nav>
           </div>
 
@@ -304,6 +329,12 @@ export default function DonationsPage() {
 
             {activeTab === 'history' && (
               <DonationHistoryComponent donations={donationHistory} loading={loading} />
+            )}
+
+            {activeTab === 'levels' && (
+              <LevelProgressCard 
+                onUpgradeSuccess={loadData}
+              />
             )}
           </div>
         </div>

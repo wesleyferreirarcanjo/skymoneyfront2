@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest } from '../types/donation';
+import { Donation, DonationType, DonationStatus, ComprovanteUrlResponse, DonationReportRequest, UpgradeAvailable } from '../types/donation';
 import { donationAPI } from '../lib/api';
-import { User, Clock, CheckCircle, Eye, AlertCircle, Flag, Check } from 'lucide-react';
+import { donationsService } from '../services/donations.service';
+import { Clock, CheckCircle, Eye, AlertCircle, Flag, Check, MessageCircle } from 'lucide-react';
+import UpgradeModal from './UpgradeModal';
 
 interface DonationCardToReceiveProps {
   donation: Donation;
@@ -20,6 +22,8 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     reason: '',
     additionalInfo: ''
   });
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeInfo, setUpgradeInfo] = useState<UpgradeAvailable | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -51,6 +55,65 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     }
   };
 
+  const getInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.charAt(0).toUpperCase() || '';
+    const last = lastName?.charAt(0).toUpperCase() || '';
+    return first + last;
+  };
+
+  const getAvatarColor = (firstName?: string, lastName?: string): string => {
+    // Generate a consistent color based on the name
+    const name = `${firstName}${lastName}`.toLowerCase();
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-yellow-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500',
+    ];
+    
+    // Simple hash function to pick a color consistently
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str || str.trim() === '') return false;
+    
+    // Check if it already has data URI prefix
+    if (str.startsWith('data:image/')) return true;
+    
+    // Check if it looks like base64
+    const base64Regex = /^[A-Za-z0-9+/=]+$/;
+    return base64Regex.test(str.replace(/\s/g, ''));
+  };
+
+  const formatAvatarUrl = (avatar?: string): string | null => {
+    if (!avatar || avatar.trim() === '') return null;
+    
+    // If already has data URI prefix, return as is
+    if (avatar.startsWith('data:image/')) return avatar;
+    
+    // If it's base64, add the data URI prefix (assuming PNG)
+    if (isValidBase64Image(avatar)) {
+      return `data:image/png;base64,${avatar}`;
+    }
+    
+    // If it's a URL, return as is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+    
+    return null;
+  };
+
   const handleViewComprovante = async () => {
     try {
       setError(null);
@@ -62,17 +125,44 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     }
   };
 
-  const handleConfirmReceipt = async () => {
-    if (!confirming) {
-      setConfirming(true);
-      return;
-    }
+  const getWhatsAppLink = (phone?: string): string => {
+    if (!phone) return '#';
+    const cleanPhone = phone.replace(/\D/g, '');
+    const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const message = encodeURIComponent('Ola eu sou um test');
+    return `https://wa.me/${phoneWithCountry}?text=${message}`;
+  };
 
+  const getPhoneFromProfileOrPix = (phone?: string, pixKey?: string): string | undefined => {
+    if (phone && phone.replace(/\D/g, '').length >= 10) return phone;
+    if (pixKey) {
+      const digits = pixKey.replace(/\D/g, '');
+      if (digits.length >= 10 && digits.length <= 13) {
+        return digits;
+      }
+    }
+    return undefined;
+  };
+
+  const handleConfirmReceipt = async () => {
+    console.log('🟢 Confirm button clicked for donation:', donation.id);
     try {
+      setConfirming(true);
       setError(null);
-      await donationAPI.confirmDonation({ donationId: donation.id });
+      console.log('🔄 Making API call to confirm donation...');
+      const response = await donationsService.confirmDonation(donation.id);
+      console.log('✅ Donation confirmed successfully, response:', response);
+      
+      // Check if level was completed and upgrade is available
+      if (response.level_completed && response.upgrade_available) {
+        console.log('🎉 Level completed! Upgrade available:', response.upgrade_available);
+        setUpgradeInfo(response.upgrade_available);
+        setShowUpgradeModal(true);
+      }
+      
       onUpdate(); // Refresh the donations list
     } catch (err: any) {
+      console.error('❌ Error confirming donation:', err);
       setError(err.message || 'Erro ao confirmar recebimento');
     } finally {
       setConfirming(false);
@@ -128,70 +218,148 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
     setReportSuccess(false);
   };
 
+  const handleUpgradeSuccess = (newLevel: number) => {
+    console.log('🎉 Upgrade successful! New level:', newLevel);
+    // Close upgrade modal
+    setShowUpgradeModal(false);
+    setUpgradeInfo(null);
+    // Refresh data to show new level and updated donations
+    onUpdate();
+  };
+
+  const closeUpgradeModal = () => {
+    setShowUpgradeModal(false);
+    setUpgradeInfo(null);
+  };
+
   const isComprovanteSent = donation.status === DonationStatus.PENDING_CONFIRMATION;
 
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        {/* Header Section - Avatar, Name and Status */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start space-x-4 flex-1">
+          <div className="flex items-start space-x-4">
             {/* Donor Avatar */}
             <div className="flex-shrink-0">
-              {donation.donor?.avatarUrl ? (
+              {donation.donor && formatAvatarUrl(donation.donor.avatarUrl) ? (
                 <img
                   className="h-12 w-12 rounded-full object-cover"
-                  src={donation.donor.avatarUrl}
-                  alt={donation.donor.name}
+                  src={formatAvatarUrl(donation.donor.avatarUrl)!}
+                  alt={donation.donor?.firstName && donation.donor?.lastName 
+                    ? `${donation.donor.firstName} ${donation.donor.lastName}`
+                    : donation.donor?.name}
                 />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
-                  <User className="h-6 w-6 text-gray-600" />
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getAvatarColor(donation.donor?.firstName, donation.donor?.lastName)}`}>
+                  <span className="text-white text-lg font-semibold">
+                    {getInitials(donation.donor?.firstName, donation.donor?.lastName)}
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Donation Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {donation.donor?.name}
-                </h3>
-                <span className="text-sm text-gray-500">#{donation.donor?.id.slice(-3)}</span>
-              </div>
-
-              {/* Amount */}
-              <div className="mb-3">
-                <p className="text-sm text-gray-500">Valor:</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(donation.amount)}</p>
-              </div>
-
-              {/* Donation Type */}
-              <div className="mb-3">
-                <p className="text-sm text-gray-500">Tipo de Doação:</p>
-                <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
-              </div>
+            {/* Name and Badge */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                {donation.donor?.firstName && donation.donor?.lastName 
+                  ? `${donation.donor.firstName} ${donation.donor.lastName}`
+                  : donation.donor?.name}
+              </h3>
+              {donation.donor_queue_position !== undefined && donation.donor_queue_level !== undefined && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Fila N{donation.donor_queue_level} - Pos #{donation.donor_queue_position}
+                </span>
+              )}
             </div>
           </div>
 
           {/* Status */}
-          <div className="flex-shrink-0 ml-4">
-            <div className="text-right">
-              {isComprovanteSent ? (
-                <div className="flex items-center text-green-600 mb-2">
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">Comprovante Enviado!</span>
-                </div>
-              ) : (
-                <div className="flex items-center text-orange-600 mb-2">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">Aguardando pagamento</span>
-                </div>
-              )}
-              <div className="text-sm text-gray-500">
-                Verifique sua conta
+          <div className="flex-shrink-0 text-right">
+            {isComprovanteSent ? (
+              <div className="flex items-center justify-end text-green-600 mb-2">
+                <CheckCircle className="h-4 w-4 mr-1" />
+                <span className="text-sm font-medium">Comprovante Enviado!</span>
               </div>
+            ) : (
+              <div className="flex items-center justify-end text-orange-600 mb-2">
+                <Clock className="h-4 w-4 mr-1" />
+                <span className="text-sm font-medium">Aguardando pagamento</span>
+              </div>
+            )}
+            <div className="text-sm text-gray-500">
+              Verifique sua conta
             </div>
           </div>
+        </div>
+
+        {/* Content Section */}
+        <div>
+
+          {/* User Details */}
+          {(donation.donor?.firstName || donation.donor?.email || donation.donor?.phone || donation.donor?.pixOwnerName) && (
+            <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs font-semibold text-blue-700 mb-2">Informações do Doador:</p>
+              <div className="space-y-1">
+                {(donation.donor?.firstName || donation.donor?.lastName) && (
+                  <div className="flex items-center text-sm">
+                    <span className="text-blue-600 w-20">Nome:</span>
+                    <span className="text-blue-900 font-medium">
+                      {donation.donor.firstName} {donation.donor.lastName}
+                    </span>
+                  </div>
+                )}
+                {donation.donor?.email && (
+                  <div className="flex items-center text-sm">
+                    <span className="text-blue-600 w-20">Email:</span>
+                    <span className="text-blue-900 font-medium">{donation.donor.email}</span>
+                  </div>
+                )}
+                {donation.donor?.phone && (
+                  <div className="flex items-center text-sm">
+                    <span className="text-blue-600 w-20">Telefone:</span>
+                    <span className="text-blue-900 font-medium">{donation.donor.phone}</span>
+                  </div>
+                )}
+                {donation.donor?.pixOwnerName && (
+                  <div className="flex items-center text-sm">
+                    <span className="text-blue-600 w-20">Titular PIX:</span>
+                    <span className="text-blue-900 font-medium">{donation.donor.pixOwnerName}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Amount */}
+          <div className="mb-3">
+            <p className="text-sm text-gray-500">Valor:</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(donation.amount)}</p>
+          </div>
+
+          {/* Donation Type */}
+          <div className="mb-3">
+            <p className="text-sm text-gray-500">Tipo de Doação:</p>
+            <p className="text-sm font-medium text-blue-600">{getDonationTypeLabel(donation.type)}</p>
+          </div>
+
+          {/* WhatsApp Contact */}
+          {(() => {
+            const phone = getPhoneFromProfileOrPix(donation.donor?.phone, donation.donor?.pixKey);
+            return phone ? (
+              <div className="mb-3">
+                <a
+                  href={getWhatsAppLink(phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 px-3 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* Error Message */}
@@ -224,7 +392,7 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
                 {confirming ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {confirming === true ? 'Confirmando...' : 'Clique para confirmar'}
+                    Confirmando...
                   </>
                 ) : (
                   <>
@@ -443,6 +611,16 @@ export default function DonationCardToReceive({ donation, onUpdate }: DonationCa
             </div>
           </div>
         </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && upgradeInfo && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={closeUpgradeModal}
+          upgradeInfo={upgradeInfo}
+          onUpgradeSuccess={handleUpgradeSuccess}
+        />
       )}
     </>
   );

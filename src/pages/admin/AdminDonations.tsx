@@ -68,10 +68,6 @@ export default function AdminDonations() {
       setError(null);
       setSearching(searchTerm.length > 0);
 
-      // Carregar estatísticas
-      const statsData = await donationAPI.getDonationsStats();
-      setStats(statsData);
-
       // Carregar doações baseado no filtro ativo
       let statusFilter: string | undefined;
       if (activeView !== 'all') {
@@ -111,8 +107,34 @@ export default function AdminDonations() {
         }
       }
 
+      // Calcular estatísticas sem endpoint dedicado (usando paginação da lista)
+      try {
+        const [allResp, pendingResp, completedResp, expiredResp] = await Promise.all([
+          donationAPI.getAllDonations(1, 1),
+          donationAPI.getAllDonations(1, 1, 'PENDING_PAYMENT,PENDING_CONFIRMATION'),
+          donationAPI.getAllDonations(1, 1, 'CONFIRMED'),
+          donationAPI.getAllDonations(1, 1, 'EXPIRED,CANCELLED'),
+        ]);
+        setStats({
+          totalDonations: allResp.pagination.totalItems || 0,
+          pendingPayment: pendingResp.pagination.totalItems || 0, // usado apenas para somar pendências
+          pendingConfirmation: 0,
+          confirmed: completedResp.pagination.totalItems || 0,
+          expired: expiredResp.pagination.totalItems || 0,
+          cancelled: 0,
+          totalAmount: 0,
+        });
+      } catch (statsErr: any) {
+        console.warn('Falha ao calcular estatísticas de doações:', statsErr?.message || statsErr);
+      }
+
       const donationsData = await donationAPI.getAllDonations(currentPage, pageSize, statusFilter, searchParams);
       setDonations(donationsData.data);
+
+      // Atualizar estatísticas vindas da lista (se presentes)
+      if ((donationsData as any).stats) {
+        setStats((donationsData as any).stats);
+      }
 
       // Update pagination info
       setTotalPages(donationsData.pagination.totalPages);

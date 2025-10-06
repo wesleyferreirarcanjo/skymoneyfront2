@@ -7,12 +7,16 @@ import {
   DonationHistory,
   SendComprovanteRequest,
   ConfirmDonationRequest,
+  ConfirmDonationResponse,
   ComprovanteUrlResponse,
   DonationReportRequest,
   DonationReportResponse,
   DonationReport,
   ReportResolutionRequest,
-  ReportResolutionResponse
+  ReportResolutionResponse,
+  LevelProgress,
+  AcceptUpgradeRequest,
+  AcceptUpgradeResponse
 } from '../types/donation';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -24,7 +28,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function to make authenticated requests
-const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}): Promise<any> => {
+export const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}): Promise<any> => {
   const token = getAuthToken();
 
   const headers: Record<string, string> = {
@@ -34,6 +38,20 @@ const makeAuthenticatedRequest = async (url: string, options: RequestInit = {}):
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn('⚠️ No auth token found for request:', url);
+  }
+
+  // Log request details for debugging
+  if (url.includes('accept-upgrade')) {
+    console.log('🔍 [DEBUG] Accept Upgrade Request:', {
+      url: `${API_BASE_URL}${url}`,
+      method: options.method || 'GET',
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'none',
+      body: options.body,
+      headers: { ...headers, Authorization: headers.Authorization ? `Bearer ${headers.Authorization.substring(7, 27)}...` : 'none' }
+    });
   }
 
   try {
@@ -227,6 +245,18 @@ export const authAPI = {
       throw error;
     }
   },
+
+  uploadAvatar: async (avatarBase64: string): Promise<any> => {
+    try {
+      const result = await makeAuthenticatedRequest('/users/profile/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ avatar: avatarBase64 }),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
 };
 
 // Reports list response
@@ -240,11 +270,18 @@ export interface ReportsListResponse {
 }
 
 export interface ReportsStats {
-  totalReports: number;
-  pendingReports: number;
-  investigatingReports: number;
-  resolvedReports: number;
-  dismissedReports: number;
+  // Status breakdown (optional if backend doesn't return)
+  pendingReports?: number;
+  investigatingReports?: number;
+  resolvedReports?: number;
+  dismissedReports?: number;
+
+  // Aggregate fields from backend stats endpoint
+  totalReports?: number;
+  totalAmountReported?: number;
+  reportsThisWeek?: number;
+  reportsThisMonth?: number;
+  averageReportAmount?: number;
 }
 
 export const donationAPI = {
@@ -291,16 +328,11 @@ export const donationAPI = {
   // Send comprovante for donation
   sendComprovante: async (data: SendComprovanteRequest): Promise<{ message: string }> => {
     try {
-      const formData = new FormData();
-      formData.append('comprovante', data.comprovanteFile);
-
       const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/comprovante`, {
         method: 'POST',
-        body: formData,
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it with boundary
-          'Authorization': `Bearer ${getAuthToken()}`,
-        },
+        body: JSON.stringify({
+          comprovanteBase64: data.comprovanteBase64
+        }),
       });
       return result;
     } catch (error: any) {
@@ -309,13 +341,16 @@ export const donationAPI = {
   },
 
   // Confirm donation receipt
-  confirmDonation: async (data: ConfirmDonationRequest): Promise<{ message: string }> => {
+  confirmDonation: async (data: ConfirmDonationRequest): Promise<ConfirmDonationResponse> => {
+    console.log('🚀 API: confirmDonation called with donationId:', data.donationId);
     try {
       const result = await makeAuthenticatedRequest(`/donations/${data.donationId}/confirm`, {
         method: 'PATCH',
       });
+      console.log('✅ API: confirmDonation successful, result:', result);
       return result;
     } catch (error: any) {
+      console.error('❌ API: confirmDonation failed:', error);
       throw error;
     }
   },
@@ -347,7 +382,25 @@ export const donationAPI = {
   },
 
   // Admin endpoints
-  getAllDonations: async (page: number = 1, limit: number = 20, status?: string, searchParams?: any): Promise<DonationHistory> => {
+  getAllDonations: async (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    searchParams?: {
+      donorId?: string;
+      receiverId?: string;
+      id?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      minAmount?: number;
+      maxAmount?: number;
+      type?: string;
+    }
+  ): Promise<{
+    data: Donation[];
+    pagination: { currentPage: number; totalPages: number; totalItems: number };
+    stats?: any;
+  }> => {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -355,7 +408,12 @@ export const donationAPI = {
         ...(status && { status }),
         ...(searchParams?.donorId && { donorId: searchParams.donorId }),
         ...(searchParams?.receiverId && { receiverId: searchParams.receiverId }),
-        ...(searchParams?.id && { id: searchParams.id })
+        ...(searchParams?.id && { id: searchParams.id }),
+        ...(searchParams?.dateFrom && { dateFrom: searchParams.dateFrom }),
+        ...(searchParams?.dateTo && { dateTo: searchParams.dateTo }),
+        ...(searchParams?.minAmount && { minAmount: searchParams.minAmount.toString() }),
+        ...(searchParams?.maxAmount && { maxAmount: searchParams.maxAmount.toString() }),
+        ...(searchParams?.type && { type: searchParams.type })
       });
       const result = await makeAuthenticatedRequest(`/admin/donations/list?${params}`);
       return result;
@@ -374,6 +432,7 @@ export const donationAPI = {
     }
   },
 
+  // Deprecated by list.stats but kept for backward compatibility
   getDonationsStats: async (): Promise<{
     totalDonations: number;
     pendingPayment: number;
@@ -444,22 +503,21 @@ export const donationAPI = {
     type?: string;
   }): Promise<ReportsStats> => {
     try {
+      // Backend supports GET /admin/donations/reports/stats with optional filters
       const params = new URLSearchParams();
-
-      // Adicionar filtros conforme documentação da API
       if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.append('dateTo', filters.dateTo);
-      if (filters?.minAmount) params.append('minAmount', filters.minAmount.toString());
-      if (filters?.maxAmount) params.append('maxAmount', filters.maxAmount.toString());
+      if (filters?.minAmount) params.append('minAmount', String(filters.minAmount));
+      if (filters?.maxAmount) params.append('maxAmount', String(filters.maxAmount));
       if (filters?.donorId) params.append('donorId', filters.donorId);
       if (filters?.receiverId) params.append('receiverId', filters.receiverId);
       if (filters?.type) params.append('type', filters.type);
 
-      const queryString = params.toString();
-      const url = queryString ? `/admin/donations/reports/stats?${queryString}` : '/admin/donations/reports/stats';
+      const query = params.toString();
+      const url = query ? `/admin/donations/reports/stats?${query}` : '/admin/donations/reports/stats';
 
       const result = await makeAuthenticatedRequest(url);
-      return result;
+      return result as ReportsStats;
     } catch (error: any) {
       throw error;
     }
@@ -511,6 +569,66 @@ export const donationAPI = {
   getUserReportDetails: async (reportId: string): Promise<DonationReport> => {
     try {
       const result = await makeAuthenticatedRequest(`/donations/reports/${reportId}`);
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // New level system endpoints
+  getMyLevelProgress: async (): Promise<LevelProgress[]> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/my-level-progress');
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  acceptUpgrade: async (data: AcceptUpgradeRequest): Promise<AcceptUpgradeResponse> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/accept-upgrade', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  // Admin endpoints for level management
+  generateMonthlyPull: async (): Promise<{
+    message: string;
+    created: number;
+    errors: any[];
+    breakdown: {
+      n1: number;
+      n2: number;
+      n3: number;
+    };
+  }> => {
+    try {
+      const result = await makeAuthenticatedRequest('/donations/admin/generate-monthly-pull', {
+        method: 'POST',
+      });
+      return result;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  getLevelStats: async (level: number): Promise<{
+    level: number;
+    totalUsers: number;
+    activeUsers: number;
+    completedUsers: number;
+    averageProgress: number;
+    totalDonationsReceived: number;
+    totalAmountReceived: number;
+  }> => {
+    try {
+      const result = await makeAuthenticatedRequest(`/donations/admin/level-stats/${level}`);
       return result;
     } catch (error: any) {
       throw error;
